@@ -1,0 +1,433 @@
+{
+  "name": "Breach Records — Sheets → Supabase + API staging",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg",
+          "cachedResultName": "generic data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "43395c40-3e09-4ff5-a1e4-61a803bfae90",
+      "name": "Read generic data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        992,
+        1376
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w",
+          "cachedResultName": "BreachSense",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "31a8e3ef-f8ed-418f-ba3a-7f9cfc282ba1",
+      "name": "Read BreachSense",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        992,
+        1568
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "17c55d70-d31d-4eab-921d-3bbcf030056c",
+      "name": "Read AG Notices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        992,
+        1760
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ea8OT112z5bE2d1-Zz-Ezd03MwdqJSjAuYQHn8nA0LU",
+          "mode": "list",
+          "cachedResultName": "HOOKPHISH",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ea8OT112z5bE2d1-Zz-Ezd03MwdqJSjAuYQHn8nA0LU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ea8OT112z5bE2d1-Zz-Ezd03MwdqJSjAuYQHn8nA0LU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "888fc0da-3636-4ac0-a0da-2845397881ac",
+      "name": "Read HookPhish",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        992,
+        1952
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge the per-source batches (one item each, with a `.batch` array) coming from\n// all Normalize nodes, then split into fixed-size chunks. Each chunk becomes one\n// output item → the single downstream HTTP node fires one upsert per chunk.\n//\n// Why chunk: a single INSERT ... ON CONFLICT with the whole payload (especially on\n// the first run, when the watermark is empty and the entire sheet history passes)\n// blows past Supabase's statement_timeout (Postgres error 57014). The GIN index on\n// `raw` makes large inserts even slower. Smaller statements stay well under the limit.\n// Tune CHUNK_SIZE down if you still see timeouts, up for fewer round-trips.\nconst CHUNK_SIZE = 100;\n\nconst all = [];\nfor (const it of $input.all()) {\n  const b = it.json && it.json.batch;\n  if (Array.isArray(b)) all.push(...b);\n}\n\n// Nothing to send this tick → emit nothing so the HTTP node doesn't POST [].\nif (all.length === 0) return [];\n\nconst out = [];\nfor (let i = 0; i < all.length; i += CHUNK_SIZE) {\n  out.push({ json: { batch: all.slice(i, i + CHUNK_SIZE) } });\n}\nreturn out;\n"
+      },
+      "id": "9c7e80b1-d013-4eb5-88ae-cdb2c488e73d",
+      "name": "Combine batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        1664
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://gyzpaxwxpefblwyobkgp.supabase.co/rest/v1/breach_records?on_conflict=source,row_hash",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.batch }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchInterval": 3000
+            }
+          }
+        }
+      },
+      "id": "3a23f9d9-8b11-4795-9c31-865fee37be68",
+      "name": "Upsert → Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1664,
+        1664
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mzOPiKl7kTCUOhHD",
+          "name": "Supabase_staging"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        768,
+        1376
+      ],
+      "id": "a095076e-0496-4839-ad75-0da7cc90f261",
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtMinute": 55
+            }
+          ]
+        }
+      },
+      "id": "460c87ba-77c4-438d-8e51-46dd2818bc7f",
+      "name": "Every 1 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        768,
+        1952
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize generic-data rows AND aggregate into a single batch item,\n// so the next HTTP node makes one Supabase call per ingest tick.\n//\n// Watermark: we remember the max `Date` we've ever processed in Workflow Static Data\n// and skip anything older than (watermark - LOOKBACK_MS) on subsequent runs.\n// LOOKBACK_MS buys us tolerance for rows that arrive slightly out of order or get\n// edited retroactively. To force a full re-scan, deactivate the workflow, edit\n// staticData.generic_last_date in the workflow JSON (or just delete the key) and\n// reactivate.\nconst crypto = require('crypto');\nconst items = $input.all();\nconst batch = [];\n\nconst LOOKBACK_MS = 60 * 60 * 3000; // 3 hour\nconst staticData  = $getWorkflowStaticData('global');\nconst watermarkKey = 'generic_last_date';\nconst lastSeen = new Date(staticData[watermarkKey] || '1970-01-01T00:00:00Z');\nconst cutoff   = new Date(lastSeen.getTime() - LOOKBACK_MS);\nlet maxDate    = lastSeen;\n\nfor (const it of items) {\n  const r = it.json || {};\n  // skip totally empty rows\n  if (!r['Entity Name'] && !r['Date'] && !r['Summary']) continue;\n\n  // Watermark filter: skip rows whose Date is older than cutoff.\n  // Rows without a parseable Date pass through (better to upsert than to lose).\n  const rowDate = r['Date'] ? new Date(r['Date']) : null;\n  const rowDateValid = rowDate && !isNaN(rowDate.getTime());\n  if (rowDateValid && rowDate < cutoff) continue;\n  if (rowDateValid && rowDate > maxDate) maxDate = rowDate;\n\n  const raw = { ...r };\n  const hash = crypto.createHash('sha256').update(JSON.stringify(raw)).digest('hex');\n\n  batch.push({\n    source: 'generic',\n    source_row_date: r['Date'] || null,\n    entity_name: r['Entity Name'] || null,\n    entity_url: r['Company URL'] || null,\n    entity_domain: null,\n    headquarters: r['Headquarters'] || null,\n    impacted: r['Impacted'] || null,\n    leak_size: null,\n    threat_actor: r['Threat Actor'] || null,\n    breach_date: r['Date of Breach'] || null,\n    date_published: r['Date Published'] || null,\n    information_compromised: r['Information Compromised'] || null,\n    description: null,\n    summary: r['Summary'] || null,\n    discovery_link: r['Link to Where I Found Out About the Breach'] || null,\n    external_source_link: r['External Source Link'] || null,\n    competitor_activity: null,\n    raw: raw,            // PostgREST handles JSONB natively — pass as object\n    row_hash: hash,\n  });\n}\n\n// Bump watermark only if we saw something newer than the previous high-water mark.\nif (maxDate > lastSeen) {\n  staticData[watermarkKey] = maxDate.toISOString();\n}\n\n// If nothing to send this tick, emit nothing so the HTTP node doesn't POST [].\nif (batch.length === 0) return [];\nreturn [{ json: { batch } }];\n"
+      },
+      "id": "358e21a8-ab03-49d0-b10c-a7174515914a",
+      "name": "Normalize generic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Same watermark pattern as Normalize generic — see comments there.\nconst crypto = require('crypto');\nconst items = $input.all();\nconst batch = [];\n\nconst LOOKBACK_MS = 60 * 60 * 3000; // 3 hour\nconst staticData  = $getWorkflowStaticData('global');\nconst watermarkKey = 'breachsense_last_date';\nconst lastSeen = new Date(staticData[watermarkKey] || '1970-01-01T00:00:00Z');\nconst cutoff   = new Date(lastSeen.getTime() - LOOKBACK_MS);\nlet maxDate    = lastSeen;\n\nfor (const it of items) {\n  const r = it.json || {};\n  if (!r['Entity_Name'] && !r['date'] && !r['Breach_Description']) continue;\n\n  const rowDate = r['date'] ? new Date(r['date']) : null;\n  const rowDateValid = rowDate && !isNaN(rowDate.getTime());\n  if (rowDateValid && rowDate < cutoff) continue;\n  if (rowDateValid && rowDate > maxDate) maxDate = rowDate;\n\n  const raw = { ...r };\n  const hash = crypto.createHash('sha256').update(JSON.stringify(raw)).digest('hex');\n\n  batch.push({\n    source: 'breachsense',\n    source_row_date: r['date'] || null,\n    entity_name: r['Entity_Name'] || null,\n    entity_url: r['Website_Domain'] || null,\n    entity_domain: r['Website_Domain'] || null,\n    headquarters: r['Headquarters'] || null,\n    impacted: r['Leak_Size'] || null,\n    leak_size: r['Leak_Size'] || null,\n    threat_actor: r['Threat_Actor'] || null,\n    breach_date: r['Date_Discovered'] || null,\n    date_published: null,\n    information_compromised: null,\n    description: r['Breach_Description'] || null,\n    summary: null,\n    discovery_link: r['Link to Where I Found Out About the Breach'] || null,\n    external_source_link: null,\n    competitor_activity: r['Competitor Activity'] || null,\n    raw: raw,\n    row_hash: hash,\n  });\n}\n\nif (maxDate > lastSeen) {\n  staticData[watermarkKey] = maxDate.toISOString();\n}\n\nif (batch.length === 0) return [];\nreturn [{ json: { batch } }];\n"
+      },
+      "id": "d8477009-21db-4023-bcc9-6bbe91c0b7ab",
+      "name": "Normalize BreachSense",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize AG Notices (legal / state-AG breach notifications) rows into a single batch.\n// Same watermark pattern as Normalize generic — see comments there.\nconst crypto = require('crypto');\nconst items = $input.all();\nconst batch = [];\n\nconst LOOKBACK_MS = 60 * 60 * 3000; // 3 hour\nconst staticData  = $getWorkflowStaticData('global');\nconst watermarkKey = 'ag_notices_last_date';\nconst lastSeen = new Date(staticData[watermarkKey] || '1970-01-01T00:00:00Z');\nconst cutoff   = new Date(lastSeen.getTime() - LOOKBACK_MS);\nlet maxDate    = lastSeen;\n\nfor (const it of items) {\n  const r = it.json || {};\n  // skip totally empty rows\n  if (!r['Entity Name'] && !r['Date'] && !r['Information Compromised']) continue;\n\n  const rowDate = r['Date'] ? new Date(r['Date']) : null;\n  const rowDateValid = rowDate && !isNaN(rowDate.getTime());\n  if (rowDateValid && rowDate < cutoff) continue;\n  if (rowDateValid && rowDate > maxDate) maxDate = rowDate;\n\n  const raw = { ...r };\n  const hash = crypto.createHash('sha256').update(JSON.stringify(raw)).digest('hex');\n\n  batch.push({\n    source: 'ag_notices',\n    source_row_date: r['Date'] || null,\n    entity_name: r['Entity Name'] || null,\n    entity_url: r['Company URL'] || null,\n    entity_domain: null,\n    headquarters: r['Headquarters'] || null,\n    impacted: r['Impacted'] || null,\n    leak_size: null,\n    threat_actor: null,\n    breach_date: null,\n    date_published: r['Public Disclosure Date'] || null,\n    information_compromised: r['Information Compromised'] || null,\n    description: null,\n    summary: null,\n    discovery_link: r['Link to Where I Found Out About the Breach'] || null,\n    external_source_link: r['Link to Public Disclosure (AG site/official source)'] || null,\n    competitor_activity: r['competitir_ad_status'] || null,\n    raw: raw,\n    row_hash: hash,\n  });\n}\n\nif (maxDate > lastSeen) {\n  staticData[watermarkKey] = maxDate.toISOString();\n}\n\nif (batch.length === 0) return [];\nreturn [{ json: { batch } }];\n"
+      },
+      "id": "8ee6510f-0c0b-4ca2-893e-688cedd4bcc0",
+      "name": "Normalize AG Notices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize HookPhish (ransomware tracker) rows into a single batch.\n// Same watermark pattern as Normalize generic — see comments there.\nconst crypto = require('crypto');\nconst items = $input.all();\nconst batch = [];\n\nconst LOOKBACK_MS = 60 * 60 * 3000; // 3 hour\nconst staticData  = $getWorkflowStaticData('global');\nconst watermarkKey = 'hookphish_last_date';\nconst lastSeen = new Date(staticData[watermarkKey] || '1970-01-01T00:00:00Z');\nconst cutoff   = new Date(lastSeen.getTime() - LOOKBACK_MS);\nlet maxDate    = lastSeen;\n\nfor (const it of items) {\n  const r = it.json || {};\n  // skip totally empty rows\n  if (!r['Entity Name'] && !r['Date'] && !r['Summary']) continue;\n\n  const rowDate = r['Date'] ? new Date(r['Date']) : null;\n  const rowDateValid = rowDate && !isNaN(rowDate.getTime());\n  if (rowDateValid && rowDate < cutoff) continue;\n  if (rowDateValid && rowDate > maxDate) maxDate = rowDate;\n\n  const raw = { ...r };\n  const hash = crypto.createHash('sha256').update(JSON.stringify(raw)).digest('hex');\n\n  batch.push({\n    source: 'hookphish',\n    source_row_date: r['Date'] || null,\n    entity_name: r['Entity Name'] || null,\n    entity_url: r['Company URL'] || null,\n    entity_domain: null,\n    headquarters: r['Headquarters'] || null,\n    impacted: r['Impacted'] || null,\n    leak_size: null,\n    threat_actor: r['Threat Group'] || null,\n    breach_date: r['Date of Breach'] || null,\n    date_published: null,\n    information_compromised: r['Information Compromised'] || null,\n    description: null,\n    summary: r['Summary'] || null,\n    discovery_link: r['Link to Source'] || null,\n    external_source_link: null,\n    competitor_activity: r['Competitors Advertised'] || null,\n    raw: raw,\n    row_hash: hash,\n  });\n}\n\nif (maxDate > lastSeen) {\n  staticData[watermarkKey] = maxDate.toISOString();\n}\n\nif (batch.length === 0) return [];\nreturn [{ json: { batch } }];\n"
+      },
+      "id": "69e5b090-6afe-409e-95e0-957415b55bb1",
+      "name": "Normalize HookPhish",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        1952
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Read generic data": {
+      "main": [
+        [
+          {
+            "node": "Normalize generic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read BreachSense": {
+      "main": [
+        [
+          {
+            "node": "Normalize BreachSense",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read AG Notices": {
+      "main": [
+        [
+          {
+            "node": "Normalize AG Notices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read HookPhish": {
+      "main": [
+        [
+          {
+            "node": "Normalize HookPhish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read generic data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 1 h": {
+      "main": [
+        [
+          {
+            "node": "Read BreachSense",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read AG Notices",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read HookPhish",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read generic data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize generic": {
+      "main": [
+        [
+          {
+            "node": "Combine batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize BreachSense": {
+      "main": [
+        [
+          {
+            "node": "Combine batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize AG Notices": {
+      "main": [
+        [
+          {
+            "node": "Combine batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize HookPhish": {
+      "main": [
+        [
+          {
+            "node": "Combine batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine batches": {
+      "main": [
+        [
+          {
+            "node": "Upsert → Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d756c215-28fb-4721-917b-aa1940fdf506",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "77nGqjH7tdT1UCSd",
+  "tags": []
+}

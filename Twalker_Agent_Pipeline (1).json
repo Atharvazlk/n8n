@@ -1,0 +1,546 @@
+{
+  "name": "Twalker_Agent_Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dashboard.mydatabreachattorney.com/api/search-export",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1456,
+        -448
+      ],
+      "id": "0504c259-0669-40dd-8b19-a189de822516",
+      "name": "S3 Bucket API",
+      "retryOnFail": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "h1q43MVQCgwHRS0o",
+          "name": "S3 Header Auth(FB-Leads_Production)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "API to get downloadable excel from FB Keyword scraper."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1520,
+        -560
+      ],
+      "typeVersion": 1,
+      "id": "7b2670e9-4216-4331-8aed-59fca4126385",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1248,
+        -448
+      ],
+      "id": "425a4e46-ffe4-4b53-9d2e-8ede456462c3",
+      "name": "Download Export File",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "NOTE: \"The URL itself was actually a pre-signed S3 URL (note the X-Amz-Signature, X-Amz-Expires=300 params) - that's exactly the kind of self-authenticating link I mentioned earlier. It's time-limited (5 minutes per Expires=300), so this needs to be downloaded promptly after the search call, not cached or reused later — worth keeping in mind if this pipeline ever adds delays between steps.\"",
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1600,
+        -1248
+      ],
+      "typeVersion": 1,
+      "id": "5d3c0ebf-c117-4fe4-83fc-0fd03234b9a6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $('Loop Over Items').item.json.brand_keyword }}_{{ $('Download Export File').item.binary.data.fileName }}",
+        "parentId": "=01PR64SRXSWB6GXVEDFBEIYAESBPWP4QTZ",
+        "binaryData": true
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        -448
+      ],
+      "id": "c50a3d69-37a2-4430-8c22-20ef257c89a9",
+      "name": "Upload a file",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "IGrlJ80Yltbik6hZ",
+          "name": "Microsoft Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "sheetName": "Web-generator eligible"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -2256,
+        -448
+      ],
+      "id": "2a873d8a-7575-42df-abd8-b055339ba799",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.microsoft.com/v1.0/shares/u!aHR0cHM6Ly9sZXZpa29yc2luc2t5bnktbXkuc2hhcmVwb2ludC5jb20vOng6L3IvcGVyc29uYWwvZHNhbXNvbl96bGtfY29tL19sYXlvdXRzLzE1L0RvYy5hc3B4P3NvdXJjZWRvYz0lN0JENTY5NEY3MC0zRDJELTRFMzgtQTgwMi1EQzdCMDE0MzhFMTMlN0QmZmlsZT1SYWluLVByaXZhY3ktQm9hcmQueGxzeCZhY3Rpb249ZGVmYXVsdCZtb2JpbGVyZWRpcmVjdD10cnVlJkRlZmF1bHRJdGVtT3Blbj0x/driveItem/content",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOneDriveOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2448,
+        -448
+      ],
+      "id": "d8bbe9f2-3390-4354-8f24-73624f7428e4",
+      "name": "Downloading from Excel from Onedrive",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "IGrlJ80Yltbik6hZ",
+          "name": "Microsoft Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1680,
+        -448
+      ],
+      "id": "efde930c-8015-4c31-a924-c193ad33c74b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/chats/19:99cc4a5adccd492e9d5c426c118ff5e1@thread.v2/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOneDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"body\": {\n    \"contentType\": \"html\",\n    \"content\": \"🔍 Search results for: <b>{{ $('Loop Over Items').item.json.brand_keyword }}</b><br><attachment id=\\\"{{ $('Upload a file').item.json.id }}\\\"></attachment>\"\n  },\n  \"attachments\": [\n    {\n      \"id\": \"{{ $('Upload a file').item.json.id }}\",\n      \"contentType\": \"reference\",\n      \"contentUrl\": \"{{ $json.link.webUrl }}\",\n      \"name\": \"{{ $('Upload a file').item.json.name }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -704,
+        -448
+      ],
+      "id": "0b98bac9-0c6d-4fcb-8aa9-955443123cab",
+      "name": "Sends excel in Teams group chat",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "IGrlJ80Yltbik6hZ",
+          "name": "Microsoft Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2624,
+        -448
+      ],
+      "id": "57735331-754b-45b1-a7b5-663be74847f1",
+      "name": "Schedule Trigger",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/drive/items/{{ $json.id }}/createLink",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOneDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "     {\n       \"type\": \"view\",\n       \"scope\": \"organization\"\n     }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -896,
+        -448
+      ],
+      "id": "f4c27054-a0d4-439e-b689-079e98bfcde6",
+      "name": "Excell Access API",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "IGrlJ80Yltbik6hZ",
+          "name": "Microsoft Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -96
+      ],
+      "id": "88c1424d-a352-4a80-87b7-3ab036f69eff",
+      "name": "Skip Row (Error)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Read the last processed timestamp from MongoDB\nconst lastRunDoc = $('Get Last Processed Timestamp').first().json;\nconst lastRun = lastRunDoc.value || '1970-01-01';\n\n// Keep only rows with a first_seen after the last run\nconst newItems = items.filter(item => {\n  return item.json.first_seen > lastRun;\n});\n\n// Track the newest timestamp seen, to pass along for the write-back step\nlet newest = lastRun;\nif (newItems.length > 0) {\n  newest = newItems.reduce((max, item) => {\n    return item.json.first_seen > max ? item.json.first_seen : max;\n  }, lastRun);\n}\n\n// Attach the newest timestamp to each outgoing item so the later Update node can use it\nreturn newItems.map(item => ({\n  json: {\n    ...item.json,\n    _newestTimestamp: newest\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1872,
+        -448
+      ],
+      "id": "20dbbd74-3096-444c-b172-d6b2d1c7a315",
+      "name": "Filter by first_seen"
+    },
+    {
+      "parameters": {
+        "collection": "=pipeline_state",
+        "options": {},
+        "query": "{ \"key\": \"rain_privacy_board_last_seen\" }"
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        -1872,
+        -736
+      ],
+      "id": "652e7e28-bfb6-4a46-a907-c847bb7c03f0",
+      "name": "Get Last Processed Timestamp",
+      "executeOnce": true,
+      "credentials": {
+        "mongoDb": {
+          "id": "xDg1FOPPNRCACcM3",
+          "name": "MongoDB_Twalker_Pipeline_Atharva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "collection": "=pipeline_state",
+        "updateKey": "=key",
+        "fields": "=value",
+        "upsert": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        -1248,
+        -736
+      ],
+      "id": "c9d7c50d-7570-455f-9cc9-d563f18946f1",
+      "name": "Update Last Processed Timestamp.",
+      "executeOnce": true,
+      "credentials": {
+        "mongoDb": {
+          "id": "xDg1FOPPNRCACcM3",
+          "name": "MongoDB_Twalker_Pipeline_Atharva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7b75b12a-3e34-4be0-879c-3858c61e86c0",
+              "name": "key",
+              "value": "=rain_privacy_board_last_seen",
+              "type": "string"
+            },
+            {
+              "id": "e69dfc2c-eb8f-4bbf-a218-8dac7e52f00e",
+              "name": "value",
+              "value": "={{ $json._newestTimestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1456,
+        -736
+      ],
+      "id": "b28ad417-5117-4170-adc9-06794517dc83",
+      "name": "Prepare Timestamp Update",
+      "executeOnce": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "S3 Bucket API": {
+      "main": [
+        [
+          {
+            "node": "Download Export File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Export File": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Row (Error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "Excell Access API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Row (Error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Filter by first_seen",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Last Processed Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Downloading from Excel from Onedrive": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Prepare Timestamp Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "S3 Bucket API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sends excel in Teams group chat": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Row (Error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Downloading from Excel from Onedrive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excell Access API": {
+      "main": [
+        [
+          {
+            "node": "Sends excel in Teams group chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Row (Error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Row (Error)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by first_seen": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Processed Timestamp": {
+      "main": [
+        []
+      ]
+    },
+    "Update Last Processed Timestamp.": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare Timestamp Update": {
+      "main": [
+        [
+          {
+            "node": "Update Last Processed Timestamp.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fa76068b-49b4-4a3e-8a6d-86f72f7e99d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "DKSk3XydspS5AjD5",
+  "tags": []
+}

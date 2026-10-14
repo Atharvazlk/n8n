@@ -1,0 +1,3477 @@
+{
+  "name": "URL Snapshot flow",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('Split Out5').item.json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4720,
+        5904
+      ],
+      "id": "5456cb93-a3ff-427b-91dd-627bb4c00275",
+      "name": "HTTP Request2",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4304,
+        6384
+      ],
+      "id": "4d0c920c-4c5e-45a1-8028-2eb5db94384b",
+      "name": "Loop Over Items2",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=From the provided {{ $json.data }}, extract and present the following information in bullet points under the title \"Data Breach Snapshot\". Use the exact format shown below.\n \nInstructions:\n \nBold only the field titles. The values should remain unbolded.\n \nIf any PDF links are present and related to the breach, check them for relevant information to fill in the fields below.\n \nIf data is missing for a required field, follow the fallback instructions provided.\n \nField Details to Extract:\n \nEntity Name: Name of the organization that experienced the breach.\n \nHeadquarters: City and State of the organization. Perform a web search if this information is not found in the data.\n \n# Impacted: Number of individuals affected. If not specified, enter not-specified.\n \nPublic Disclosure Date: Date the breach was disclosed to the Attorney General or U.S. Department of Health and Human Services (HHS). If not available, enter NA.\n \nInformation Compromised: List the types of personal data affected (e.g., Names, SSN, DOB), separated by commas.\n \nLink to Where I Found Out About the Breach: Include the original source URL from the input data.\n \nLink to Public Disclosure (AG site/official source): Include the official breach disclosure link (e.g., AG site, HHS portal). Check any attached PDF for this information as well.\n \nCompany URL: The official website of the breached entity. Search the web if not available in the input.\n \nDate Notice Letters Went Out: Date when notice letters were sent. Check PDFs for this date. If not available, enter NA.\n \nNotice Link: Provide the URL to the notice letter, if available. Otherwise, enter NA.\n \nTier: Determine the tier based on the number of impacted individuals: Tier 1 if 500,000 or more individuals impacted. Tier 2 if fewer than 500,000 impacted, or not specified\n\nLead_Probability:Set values using these  3 rules:\n- Notice_Letters = \"Yes\" if any notice/PDF/link/email/letter exists, else \"No\".\n- Impacted = \"Known\" if any number of affected people appears, else \"Unknown\".\n- Company_Type = \"B2C\" if serving consumers, \"B2B\" if serving businesses.\n\nThen compute Lead_Probability using:\nIF(Notice_Letters=\"Yes\", IF(Impacted=\"Known\", IF(Company_Type=\"B2C\",\"High\",\"Moderate\"), IF(Company_Type=\"B2C\",\"Moderate\",\"Low\")), IF(Impacted=\"Known\", IF(Company_Type=\"B2C\",\"Moderate\",\"Low\"), \"Low\"))\n\n\nAd_Status:\"No\" if Link to Where I Found Out About the Breach is from  Maine otherwise set it to \"Yes\".\nPresent the extracted data in this exact structured snapshot format:\n \nData Breach Snapshot\n \nEntity Name:\n \nHeadquarters:\n \n# Impacted:\n \nPublic Disclosure Date:\n \nInformation Compromised: (Present this as comma separated)\n \nLink to Where I Found Out About the Breach:\n \nLink to Public Disclosure (AG site/official source):\n \nCompany URL:\n \nDate Notice Letters Went Out:\n \nNotice Link:\n \nTier:\n\nLead_Probability:\n\nAd_Status:",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        5152,
+        5232
+      ],
+      "id": "def10890-6bda-408c-970b-3e1b231d2126",
+      "name": "OpenAI3",
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Entity Name": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Entity Name'] }}",
+            "Headquarters": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot'].Headquarters }}",
+            "Impacted": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['# Impacted'] }}",
+            "Public Disclosure Date": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Public Disclosure Date'] }}",
+            "Information Compromised": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Information Compromised'] }}",
+            "Link to Where I Found Out About the Breach": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Link to Where I Found Out About the Breach'] }}",
+            "Link to Public Disclosure (AG site/official source)": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Link to Public Disclosure (AG site/official source)'] }}",
+            "Company URL": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Company URL'] }}",
+            "Date Notice Letters Went Out": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Date Notice Letters Went Out'] }}",
+            "Date": "={{ $now }}",
+            "site url": "={{ $('Split Out5').item.json.url }}",
+            "notice link": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}",
+            "Tier": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot'].Tier }}",
+            "Duplicate": "No",
+            "Approved": "No",
+            "Lead_probability": "={{ $('OpenAI3').item.json.choices[0].message.content[\"Data Breach Snapshot\"].Lead_Probability }}",
+            "competitir_ad_status": "={{ $('OpenAI3').item.json.choices[0].message.content[\"Data Breach Snapshot\"].Ad_Status }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Public Disclosure Date",
+              "displayName": "Public Disclosure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link to Public Disclosure (AG site/official source)",
+              "displayName": "Link to Public Disclosure (AG site/official source)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Notice Letters Went Out",
+              "displayName": "Date Notice Letters Went Out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notice link",
+              "displayName": "notice link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_type",
+              "displayName": "company_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headquarter_location",
+              "displayName": "headquarter_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Approved",
+              "displayName": "Approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_probability",
+              "displayName": "Lead_probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "competitir_ad_status",
+              "displayName": "competitir_ad_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_age",
+              "displayName": "company_age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "geographic_presence",
+              "displayName": "geographic_presence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "website_traffic",
+              "displayName": "website_traffic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "third_party_vendors_involved",
+              "displayName": "third_party_vendors_involved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "sub_entities_affiliates",
+              "displayName": "sub_entities_affiliates",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        6320,
+        5360
+      ],
+      "id": "c4c04900-799c-4789-b5f5-fb38acab5e77",
+      "name": "Google Sheets5",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5008,
+        5904
+      ],
+      "id": "0439bc2b-99aa-4fa0-ae8a-66044ec581df",
+      "name": "Wait2",
+      "webhookId": "21c59062-0854-45bf-a4cd-5e289358307d"
+    },
+    {
+      "parameters": {
+        "text": "={{$json.text}}",
+        "schemaType": "manual",
+        "inputSchema": "[\n  {\n    \"url\": \"The full breach listing URL\"\n  }\n]\n",
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm.\nOnly extract relevant information from a list of URLs related to data breaches.\nif json.text doesnt give output use json.html in that case and vice versa\nFrom each URL, return a JSON object with:\n- \"url\": The full URL\nfor all the urls in the given mail\n\nReturn an array of JSON objects, one per URL.\nIf any field can't be inferred, omit it.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.1,
+      "position": [
+        3808,
+        6640
+      ],
+      "id": "bca75f11-ce9e-4218-afff-bd5d3677fcbe",
+      "name": "Information Extractor3"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "chatgpt-4o-latest"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3776,
+        6944
+      ],
+      "id": "44221816-6a1b-4713-bd40-c4ceb5b085e8",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        4192,
+        6832
+      ],
+      "id": "f43301c4-f067-45bd-9b11-e57498147e69",
+      "name": "Split Out2"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/ {{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4496,
+        6816
+      ],
+      "id": "381ee4eb-0802-429b-bd33-ae6391c12236",
+      "name": "HTTP Request3",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        5200,
+        6832
+      ],
+      "id": "02d722d2-7938-409a-b191-3a09ee5e44ce",
+      "name": "Loop Over Items4",
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=From the provided {{ $json.data }}, accurately extract the following details in bullet points, with title \"Data Breach Snapshot\". The titles in the following should be in bold, the values are not bold.\nAlso do one thing that if any pdf link is there in the data related to the info about notice letter check information in there about all these field also.\nEntity Name: Name of the organization that experienced the breach.\nHeadquarters: City, State where the organization is located.\n# Impacted: Number of individuals affected incase if nothing is there so not-specified  can come.\nPublic Disclosure Date: the date when the entity disclosed the breach to attorney general or U.S. Department of Health and Human Services(HHS) , if  not there then na \nInformation Compromised: List of impacted data types (e.g., Names, SSN, DOB).\nLink to Where I Found Out About the Breach: Source URL provided.\nLink to Public Disclosure (AG site/official source): Official disclosure link (AG site, HHS portal, etc.). see in the pdf also about this.\nCompany URL: Official website of the breached entity.\nDate Notice Letters Went Out: Date notice letters were sent.if in the pdf, date is mention for this info then add \nNotice Link: If any notice letter link is there attach otherwise Na\n\nPresent the extracted data in this exact structured snapshot format:\nData Breach Snapshot\nEntity Name:\nHeadquarters:\n# Impacted:\nPublic Disclosure Date:\nInformation Compromised: (Present this as comma separated)\nLink to Where I Found Out About the Breach:\nLink to Public Disclosure (AG site/official source):\nCompany URL:\nDate Notice Letters Went Out:\nNotice Link:",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        4944,
+        6816
+      ],
+      "id": "cffe5428-91bf-411e-89f1-8fb39b59f350",
+      "name": "OpenAI4",
+      "retryOnFail": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Entity Name": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Entity Name'] }}",
+            "Headquarters": "={{ $json.choices[0].message.content['Data Breach Snapshot'].Headquarters }}",
+            "Impacted": "={{ $json.choices[0].message.content['Data Breach Snapshot']['# Impacted'] }}",
+            "Public Disclosure Date": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Public Disclosure Date'] }}",
+            "Information Compromised": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Information Compromised'] }}",
+            "Link to Where I Found Out About the Breach": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Link to Where I Found Out About the Breach'] }}",
+            "Link to Public Disclosure (AG site/official source)": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Link to Public Disclosure (AG site/official source)'] }}",
+            "Company URL": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Company URL'] }}",
+            "Date Notice Letters Went Out": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Date Notice Letters Went Out'] }}",
+            "Date": "={{ $now }}",
+            "site url": "={{ $('Split Out2').item.json.url }}",
+            "notice link": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Public Disclosure Date",
+              "displayName": "Public Disclosure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link to Public Disclosure (AG site/official source)",
+              "displayName": "Link to Public Disclosure (AG site/official source)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Notice Letters Went Out",
+              "displayName": "Date Notice Letters Went Out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notice link",
+              "displayName": "notice link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        5360,
+        6896
+      ],
+      "id": "4e2a60cd-b4f0-40ee-beca-7107d957be99",
+      "name": "Google Sheets6",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4720,
+        6816
+      ],
+      "id": "0569dcd4-6ff7-4066-8d26-e4ba59a8c29c",
+      "name": "Wait3",
+      "webhookId": "21c59062-0854-45bf-a4cd-5e289358307d"
+    },
+    {
+      "parameters": {
+        "sendTo": "ssuddala@zlk.com,gsomani@zlk.com",
+        "subject": "data Breach",
+        "emailType": "text",
+        "message": "=Entity Name: {{ $json['Entity Name'] }}\nHeadquarters: {{ $json.Headquarters }}\n# Impacted: {{ $json.Impacted }} \nPublic Disclosure Date: {{ $json['Public Disclosure Date'] }} \nInformation Compromised: {{ $json['Information Compromised'] }}\nLink to Where I Found Out About the Breach: {{ $json['Link to Where I Found Out About the Breach'] }}\nLink to Public Disclosure (AG site/official source): {{ $json['Link to Public Disclosure (AG site/official source)'] }} \nCompany URL: {{ $json['Company URL'] }}\n Date Notice Letters Went Out: {{ $json['Date Notice Letters Went Out'] }}\nSite Url: {{ $json['site url'] }}\ntimeStamp: {{ $json.Date }}\nnotice link: {{ $json['notice link'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4496,
+        6624
+      ],
+      "id": "59c1bf84-136b-4ae0-99e2-70128d3c7e6e",
+      "name": "Gmail",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.html }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "2e221f3d-f820-46f9-9dbc-d164f8fa1eef"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "06d8ef34-72cb-49f4-8917-a3b9e9fdb04d",
+                    "leftValue": "={{ $json.html }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3264,
+        6560
+      ],
+      "id": "f19f1301-9758-47fc-8dc7-ff765519862a",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an assistant that provides factual company information using trusted public sources.\n\n\nGiven a company name, provide the following details:\n1. The company's industry\n2. An estimate of how large the customer base is\n3. The company's latest or estimated annual revenue\n4. The approximate number of employees\n\nRespond ONLY in this JSON format:\n\n{\n  \"company_name\": \"<Company Name>\",\n  \"industry\": \"<Industry>\",\n  \"customer_base_size\": \"<Approximate customer base size>\",\n  \"annual_revenue\": \"<Estimated annual revenue>\",\n  \"headquater_location\":\"headquater_location\",\n  \"city\":\"city in which it is\",\n  \"country\":\"country in which it is\",\n  \"employee_number\": \"<Approximate employee number>\",\n   \"company_age\": \"<Years since founding or founding year>\",\n  \"geographic_presence\": \"<Countries or regions where the company operates>\",\n  \"website_traffic\": \"<Approx monthly website visitors (Estimated if unknown)>\",\n  \"third_party_vendors_involved\": \"<Known major vendors, tech providers, or outsourced services (comma-separated)>\",\n  \"sub_entities_affiliates\": \"<Subsidiaries or related brands (comma-separated)>\"\n}\n\nCompany: {{ $json['Entity Name'] }}\n",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        6480,
+        5264
+      ],
+      "id": "b7ee1a07-cfff-4900-ac93-8941ad89672b",
+      "name": "OpenAI5",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_type": "={{ $json.choices[0].message.content.industry }}",
+            "employee_number": "={{ $json.choices[0].message.content.customer_base_size }}",
+            "annual_revenue": "={{ $json.choices[0].message.content.annual_revenue }}",
+            "headquarter_location": "={{ $json.choices[0].message.content.headquater_location }}",
+            "city": "={{ $json.choices[0].message.content.city }}",
+            "country": "={{ $json.choices[0].message.content.country }}",
+            "Date": "={{ $('Google Sheets5').item.json.Date }}",
+            "company": "={{ $json.choices[0].message.content.company_name }}",
+            "Approved": "no",
+            "Duplicate": "no",
+            "company_age": "={{ $json.choices[0].message.content.company_age }}",
+            "geographic_presence": "={{ $json.choices[0].message.content.geographic_presence }}",
+            "website_traffic": "={{ $json.choices[0].message.content.website_traffic }}",
+            "third_party_vendors_involved": "={{ $json.choices[0].message.content.third_party_vendors_involved }}",
+            "sub_entities_affiliates": "={{ $json.choices[0].message.content.sub_entities_affiliates }}"
+          },
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Public Disclosure Date",
+              "displayName": "Public Disclosure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link to Public Disclosure (AG site/official source)",
+              "displayName": "Link to Public Disclosure (AG site/official source)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Date Notice Letters Went Out",
+              "displayName": "Date Notice Letters Went Out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "notice link",
+              "displayName": "notice link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_type",
+              "displayName": "company_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headquarter_location",
+              "displayName": "headquarter_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Approved",
+              "displayName": "Approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_probability",
+              "displayName": "Lead_probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "competitir_ad_status",
+              "displayName": "competitir_ad_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_age",
+              "displayName": "company_age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "geographic_presence",
+              "displayName": "geographic_presence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website_traffic",
+              "displayName": "website_traffic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "third_party_vendors_involved",
+              "displayName": "third_party_vendors_involved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sub_entities_affiliates",
+              "displayName": "sub_entities_affiliates",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        6832,
+        5024
+      ],
+      "id": "fbaac970-0de3-40ae-a6fa-a3a84cc3712d",
+      "name": "Google sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "ssuddala@zlk.com,gsomani@zlk.com",
+        "subject": "data Breach",
+        "message": "=<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2>🔔 Data Breach Notification for {{ $('Google Sheets5').item.json['Entity Name'] }} under {{ $('Google Sheets5').item.json.Tier }}:</h2>\n\n    <p><strong>Entity Name:</strong>{{ $('Google Sheets5').item.json['Entity Name'] }}</p>\n    <p><strong>Headquarters:</strong> {{ $('Google Sheets5').item.json.Headquarters }}</p>\n    <p><strong># Impacted:</strong> {{ $('Google Sheets5').item.json.Impacted }}</p>\n    <p><strong>Tier:</strong> {{ $('Google Sheets5').item.json.Tier }}</p>\n    <p><strong>Lead Probability::</strong> {{ $('Google Sheets5').item.json.Lead_probability }}</p>\n    <p><strong>competitior Activity:</strong> {{ $('Google Sheets5').item.json.competitir_ad_status }}</p>\n    <p><strong>Public Disclosure Date:</strong>{{ $('Google Sheets5').item.json['Public Disclosure Date'] }}</p>\n    <p><strong>Information Compromised:</strong>{{ $('Google Sheets5').item.json['Information Compromised'] }} </p>\n\n    <p><strong>Link to Where I Found Out About the Breach:</strong><br>\n      <a href=\"{{ $('Google Sheets5').item.json['Link to Where I Found Out About the Breach'] }}\" target=\"_blank\">\n       {{ $('Google Sheets5').item.json['Link to Where I Found Out About the Breach'] }}\n      </a>\n    </p>\n\n    <p><strong>Link to Public Disclosure (AG site/official source):</strong><br>\n      <a href=\"{{ $('Google Sheets5').item.json['Link to Public Disclosure (AG site/official source)'] }}\" target=\"_blank\">\n      {{ $('Google Sheets5').item.json['Link to Public Disclosure (AG site/official source)'] }}\n      </a>\n    </p>\n\n    <p><strong>Company URL:</strong><br>\n      <a href=\"{{ $('Google Sheets5').item.json['Company URL'] }}\" target=\"_blank\">\n       {{ $('Google Sheets5').item.json['Company URL'] }}\n      </a>\n    </p>\n\n    <p><strong>Date Notice Letters Went Out:</strong> {{ $('Google Sheets5').item.json['Date Notice Letters Went Out'] }}</p>\n\n    <p><strong>Site URL:</strong><br>\n      <a href=\"{{ $('Google Sheets5').item.json['site url'] }}\" target=\"_blank\">\n       {{ $('Google Sheets5').item.json['site url'] }}\n      </a>\n    </p>\n\n    <p><strong>Timestamp:</strong> {{ $('Google sheet').item.json.Date }}</p>\n\n    <p><strong>Notice Link:</strong><br>\n      <a href=\"{{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}\" target=\"_blank\">\n        {{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}\n      </a>\n    </p>\n\n    <hr>\n\n    <h3>🏢 Additional Company Information</h3>\n    <table style=\"width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;\">\n  <tr style=\"background:#f3f4f6;\">\n    <th style=\"text-align:left; padding:8px; border:1px solid #ddd;\">Field</th>\n    <th style=\"text-align:left; padding:8px; border:1px solid #ddd;\">Value</th>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Company Name</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.company }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Industry</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.company_type }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Headquarters Location</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.headquarter_location }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>City</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.city }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Country</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.country }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Company Age</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.company_age }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Annual Revenue</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.annual_revenue }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>customer_base_size</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.employee_number }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Geographic Presence</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.geographic_presence }}</td>\n  </tr>\n\n  \n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Website Traffic (Monthly)</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.website_traffic }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Third-party Vendors Involved</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.third_party_vendors_involved }}</td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:8px; border:1px solid #ddd;\"><strong>Sub-entities / Affiliates</strong></td>\n    <td style=\"padding:8px; border:1px solid #ddd;\">{{ $('Google sheet').item.json.sub_entities_affiliates }}</td>\n  </tr>\n\n</table>\n  </body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        8272,
+        5776
+      ],
+      "id": "15d62f18-11b2-43c6-a769-022f2eb92beb",
+      "name": "gmail4",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "notesInFlow": false,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b871bf1b-5444-439f-a76d-a71c80100d62",
+              "leftValue": "={{ $('Split Out5').item.json.url}}",
+              "rightValue": "\"http://json-schema.org/draft-07/schema#\"",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "af753fcc-7a43-4d7e-98df-b36330c298dc",
+              "leftValue": "={{ $('Split Out5').item.json.url}}",
+              "rightValue": "\"https://url.us.m.mimecastprotect.com/\"",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4496,
+        5904
+      ],
+      "id": "5f7265d2-9d89-44c9-b72d-b6f3019830f6",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity Name",
+              "lookupValue": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Entity Name'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        5616,
+        5680
+      ],
+      "id": "baf854cd-281e-49be-b556-fffade5f2229",
+      "name": "Google Sheets7",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0819223a-73fb-41b9-ab81-c81fd5981897",
+              "leftValue": "={{ $json.count_Entity_Name }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6096,
+        5696
+      ],
+      "id": "38dbbd36-9c67-48a3-9721-f13ee4d5f6ea",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "Entity Name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        5872,
+        5696
+      ],
+      "id": "8863d5f0-8a99-49f7-be7f-17237d0ab0ab",
+      "name": "Summarize1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Entity Name": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Entity Name'] }}",
+            "Headquarters": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot'].Headquarters }}",
+            "Impacted": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['# Impacted'] }}",
+            "Public Disclosure Date": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Public Disclosure Date'] }}",
+            "Information Compromised": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Information Compromised'] }}",
+            "Link to Where I Found Out About the Breach": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Link to Where I Found Out About the Breach'] }}",
+            "Link to Public Disclosure (AG site/official source)": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Link to Public Disclosure (AG site/official source)'] }}",
+            "Company URL": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Company URL'] }}",
+            "Date Notice Letters Went Out": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Date Notice Letters Went Out'] }}",
+            "Date": "={{ $now }}",
+            "site url": "={{ $('Split Out5').item.json.url }}",
+            "notice link": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}",
+            "Tier": "={{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot'].Tier }}",
+            "Duplicate": "Yes",
+            "Approved": "No",
+            "Lead_probability": "={{ $('OpenAI3').item.json.choices[0].message.content[\"Data Breach Snapshot\"].Lead_Probability }}",
+            "competitir_ad_status": "={{ $('OpenAI3').item.json.choices[0].message.content[\"Data Breach Snapshot\"].Ad_Status }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Public Disclosure Date",
+              "displayName": "Public Disclosure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link to Public Disclosure (AG site/official source)",
+              "displayName": "Link to Public Disclosure (AG site/official source)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Notice Letters Went Out",
+              "displayName": "Date Notice Letters Went Out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notice link",
+              "displayName": "notice link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_type",
+              "displayName": "company_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headquarter_location",
+              "displayName": "headquarter_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Approved",
+              "displayName": "Approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_probability",
+              "displayName": "Lead_probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "competitir_ad_status",
+              "displayName": "competitir_ad_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_age",
+              "displayName": "company_age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "geographic_presence",
+              "displayName": "geographic_presence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "website_traffic",
+              "displayName": "website_traffic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "third_party_vendors_involved",
+              "displayName": "third_party_vendors_involved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "sub_entities_affiliates",
+              "displayName": "sub_entities_affiliates",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        6320,
+        6032
+      ],
+      "id": "23510e07-9aa0-4507-bd25-6744b1c041ba",
+      "name": "Google Sheets9",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "ssuddala@zlk.com,gsomani@zlk.com",
+        "subject": " Duplicate data",
+        "message": "=<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2>🔔 Data Breach Notification for {{ $('Google Sheets9').item.json['Entity Name'] }} under {{ $('Google Sheets9').item.json.Tier }} Duplicate:</h2>\n\n    <p><strong>Entity Name:</strong>{{ $('Google Sheets9').item.json['Entity Name'] }}</p>\n    <p><strong>Headquarters:</strong> {{ $('Google Sheets9').item.json.Headquarters }}</p>\n    <p><strong># Impacted:</strong> {{ $('Google Sheets9').item.json.Impacted }}</p>\n    <p><strong>Tier:</strong> {{ $('Google Sheets9').item.json.Tier }}</p>\n<p><strong>Lead Probability::</strong> {{ $('Google Sheets9').item.json.Lead_probability }}</p>\n    <p><strong>competitior Ad status:</strong> {{ $('Google Sheets9').item.json.competitir_ad_status }}</p>\n    <p><strong>Public Disclosure Date:</strong>{{ $('Google Sheets9').item.json['Public Disclosure Date'] }}</p>\n    <p><strong>Information Compromised:</strong>{{ $('Google Sheets9').item.json['Information Compromised'] }} </p>\n\n    <p><strong>Link to Where I Found Out About the Breach:</strong><br>\n      <a href=\"{{ $('Google Sheets9').item.json['Link to Where I Found Out About the Breach'] }}\" target=\"_blank\">\n       {{ $('Google Sheets9').item.json['Link to Where I Found Out About the Breach'] }}\n      </a>\n    </p>\n\n    <p><strong>Link to Public Disclosure (AG site/official source):</strong><br>\n      <a href=\"{{ $('Google Sheets9').item.json['Link to Public Disclosure (AG site/official source)'] }}\" target=\"_blank\">\n      {{ $('Google Sheets9').item.json['Link to Public Disclosure (AG site/official source)'] }}\n      </a>\n    </p>\n\n    <p><strong>Company URL:</strong><br>\n      <a href=\"{{ $('Google Sheets9').item.json['Company URL'] }}\" target=\"_blank\">\n       {{ $('Google Sheets9').item.json['Company URL'] }}\n      </a>\n    </p>\n\n    <p><strong>Date Notice Letters Went Out:</strong> {{ $('Google Sheets9').item.json['Date Notice Letters Went Out'] }}</p>\n\n    <p><strong>Site URL:</strong><br>\n      <a href=\"{{ $('Google Sheets9').item.json['site url'] }}\" target=\"_blank\">\n       {{ $('Google Sheets9').item.json['site url'] }}\n      </a>\n    </p>\n\n    <p><strong>Timestamp:</strong>{{ $('Google Sheets9').item.json['Date'] }}</p>\n     <p><strong>Duplicate:</strong>yes</p>\n    <p><strong>Notice Link:</strong><br>\n      <a href=\"{{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}\" target=\"_blank\">\n        {{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}\n      </a>\n    </p>\n\n    <hr>\n\n    \n\n  </body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        8096,
+        6368
+      ],
+      "id": "989c83d6-bd3e-458e-aa4d-1a89993ea527",
+      "name": "gmail1",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "notesInFlow": false,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "=from:marketing.landk@gmail.com OR from:gsomani@zlk.com OR from:ssuddala@zlk.com  OR from:umavchi@zlk.com subject: (\"🔑 Daily Combined Breach Report\" OR \"Daily Generic Links\") {{ $json.query }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        7232
+      ],
+      "id": "1530e3c3-743c-4850-a372-5fa24fed13c5",
+      "name": "Gmail3",
+      "webhookId": "f833d33a-815f-4ea4-afc8-a0c8352fd262",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": " html",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        7120
+      ],
+      "id": "352e1c64-449f-4048-82ba-b18cedd0bdc9",
+      "name": "Split Out4",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out3'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3040,
+        7120
+      ],
+      "id": "1746795a-b940-4348-9d46-1e8e0a874a14",
+      "name": "Loop Over Items5",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4496,
+        6192
+      ],
+      "id": "93ab2347-67c9-4f86-80f6-e9e06dcfb628",
+      "name": "Wait5",
+      "webhookId": "84def3f0-90eb-4bee-940b-ecbb9bdb376a",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": " output.urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        4064,
+        6400
+      ],
+      "id": "2aace425-1663-410a-a4e5-bfe6367385c9",
+      "name": "Split Out5",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QNryjGK0Uuc6FTot",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QNryjGK0Uuc6FTot",
+          "cachedResultName": "tabular workflow1"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        4128,
+        7424
+      ],
+      "id": "725b6d0e-94d6-4f95-b16b-9d94326dd866",
+      "name": "Execute Workflow1",
+      "executeOnce": true,
+      "alwaysOutputData": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "threadId"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        2144,
+        7232
+      ],
+      "id": "f04f81ec-4910-4d46-a71d-e243a436cb97",
+      "name": "Summarize9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "74e7bd2e-54be-4c35-b94b-416a6d52d817",
+              "leftValue": "={{ $json.count_threadId }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2368,
+        7232
+      ],
+      "id": "39f6ef0a-52e8-4f20-a7d5-a9eeb4cf50da",
+      "name": "If21"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "=from:marketing.landk@gmail.com OR from:gsomani@zlk.com OR from:ssuddala@zlk.com OR from:umavchi@zlk.com subject:(\"🔑 Daily Combined Breach Report\") {{ $('Code').item.json.query }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2592,
+        7120
+      ],
+      "id": "efe6e8dc-4a9b-46e9-b076-6f7c88bc1b4a",
+      "name": "Gmail5",
+      "webhookId": "f833d33a-815f-4ea4-afc8-a0c8352fd262",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst hour = now.getHours();\nconst minute = now.getMinutes();\n\n// At exactly 8:00 AM\n// if ( $input.first().json.Hour  == 08 ) {\n//   return [{ json: { query: 'newer_than:1h' }}];  // since 5 AM\n// }\n\n// All other times (3:30 PM to 5 AM)\nreturn [{ json: { query: 'newer_than:2h' }}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        7232
+      ],
+      "id": "7f679b63-2bc5-4b33-a047-1d9294b71ca9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "20 * * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        7232
+      ],
+      "id": "260fa1af-21b8-4e9b-8fa9-376175023662",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5872,
+        6048
+      ],
+      "id": "75e9f5e0-9c23-4b62-8d25-7607be1a86c8",
+      "name": "Wait17",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6320,
+        5616
+      ],
+      "id": "daf8a449-9b81-4fbd-84c6-e74ab4c92c0b",
+      "name": "Wait18",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6656,
+        5712
+      ],
+      "id": "7b834861-c53a-4418-beba-c311f491201c",
+      "name": "Wait19",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        8656,
+        5936
+      ],
+      "id": "0c24e74a-7975-4d57-aaff-bc48361052f1",
+      "name": "Wait20",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6336,
+        6208
+      ],
+      "id": "f1e33e6a-aba8-46a6-8132-2d41f6ffb3fb",
+      "name": "Wait21",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7936,
+        6576
+      ],
+      "id": "786c2184-0683-4036-a5f6-587760f9015a",
+      "name": "Wait22",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "countUnique",
+              "field": "id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        3264,
+        7120
+      ],
+      "id": "01d99d1e-2590-4261-bc90-7c1c961b1302",
+      "name": "Summarize3",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1b85c147-4800-411f-9277-d8c61c5eb448",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3760,
+        7120
+      ],
+      "id": "78601065-6c6d-4c64-9634-3ad77e1880d7",
+      "name": "If7",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## Mail node * to send the mail for simple which trigger power automate",
+        "height": 480,
+        "width": 656
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        8224,
+        5584
+      ],
+      "typeVersion": 1,
+      "id": "6bc3c127-6fc2-479b-a3b4-5668b96cebbd",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "##It takes the chatgpt content stored into the sheets,  and also check if this entity already exist  there or not if not then it go to the google sheet to feed as a new data , then for the coompany details , it again do to the open ai model there it get the content of it  and append\n2) if it duplicates , then this stored in the sheet the data , all the parametr similiar but the  duplicte parmenter marked as  a differentiator \n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
+        "height": 464,
+        "width": 768
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        5536,
+        5424
+      ],
+      "typeVersion": 1,
+      "id": "555835e7-dad3-487a-9743-9f15bdb2c3e8",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        6224,
+        4928
+      ],
+      "typeVersion": 1,
+      "id": "48c82704-94d3-4de8-8fb4-0558d5e17e91",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## extracting the urlrunnng http requet to extract the web page through jena ai",
+        "height": 480,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4032,
+        5584
+      ],
+      "typeVersion": 1,
+      "id": "39e1bf92-9439-48df-a73d-ae3672dd716e",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## this is the trigger , where gmail trigger at specific 1 hr interval arounf 6:10 start and takes 1 hr mail before then recieving mails from meetings@zlk.com then for the subject daily downloads , it count the mails and check if the mail exist - then trigger through one mail or not then it trigger tabular flow ,",
+        "height": 400,
+        "width": 840
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        6992
+      ],
+      "id": "509dc70d-e89f-4c09-b82b-d411bc27ec5f",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## this takes the mails that come in 1 hr interval and split them run over each to extract the info on the their https page",
+        "height": 340,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        6944
+      ],
+      "id": "fa4e4408-1cc1-4c48-a2e0-0faad20a00fa",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "## this extract all url and run over them one by one and thier content is being given to chat =gpt model can look the flow for that",
+        "height": 260,
+        "width": 960
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4048,
+        5680
+      ],
+      "id": "0c3483db-e529-401a-9d24-e9f69ec1d76d",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "553cef35-383c-4cde-ae06-1deebbdb8384",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7776,
+        5328
+      ],
+      "id": "bfccef65-709d-4d73-9236-68e179b04859",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7760,
+        5520
+      ],
+      "id": "bfb12c88-5275-41e3-8f65-f04e3981ee74",
+      "name": "Wait1",
+      "webhookId": "4109e2ce-181b-4f72-a81b-13e926b3b8ac",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://staging-api.mydatabreachattorney.com/api/campaigns",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request_for api').item.json.data.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"entity_name\": \"{{ $('Google Sheets5').item.json['Entity Name'] }}\",\n  \"headquarters\": \"{{ $('Google Sheets5').item.json.Headquarters }}\",\n  \"impacted\":\"{{ $('Google Sheets5').item.json.Impacted }}\",\n  \"public_disclosure_date\": \"{{ $('Google Sheets5').item.json['Public Disclosure Date'] }}\",\n  \"information_compromised\": \"{{ $('Google Sheets5').item.json['Information Compromised'] }}\",\n  \"tier\": \"{{ $('Google Sheets5').item.json.Tier }}\",\n  \"company_name\": \"{{ $('Google Sheets5').item.json['Entity Name'] }}\", \n\"campaign_name\": \"{{ $('Google Sheets5').item.json['Entity Name'] }}\", \n  \"company_url\": \" {{ $('Google Sheets5').item.json['Company URL'] }}\",\n\n\"campaign_name\": \"{{ $('Google Sheets5').item.json['Entity Name'] }}\", \n  \"link_where_found\": \"{{ $('Google Sheets5').item.json['Link to Where I Found Out About the Breach'] }}\",\n  \"link_public_disclosure\": \"{{ $('Google Sheets5').item.json['Link to Public Disclosure (AG site/official source)'] }}\",\n  \"date_notice_letters_sent\": \" {{ $('Google Sheets5').item.json['Date Notice Letters Went Out'] }}\",\n  \"site_url\": \"{{ $('Google Sheets5').item.json['site url'] }}\",\n  \"notice_link\": \"{{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}\"\n  \n}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8000,
+        5280
+      ],
+      "id": "4aec6a70-fc6d-4545-a40f-83622005e4f6",
+      "name": "HTTP Request4",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://staging-api.mydatabreachattorney.com/api/auth/login",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "admin@zlk.com"
+            },
+            {
+              "name": "password",
+              "value": "admin123"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7392,
+        5392
+      ],
+      "id": "039c45ee-4ec8-4eb5-b131-0ad20ac702ff",
+      "name": "HTTP Request_for api",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://staging-api.mydatabreachattorney.com/api/auth/token-status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request_for api').item.json.data.token }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7552,
+        5328
+      ],
+      "id": "59070b95-9a9c-4c38-8a98-f8fb0834a0f8",
+      "name": "HTTP Request1for checking api",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "553cef35-383c-4cde-ae06-1deebbdb8384",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7360,
+        6080
+      ],
+      "id": "22b0a43f-fe40-4293-a0b8-909854055e78",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7056,
+        6288
+      ],
+      "id": "17721064-f507-415e-aa85-030a5b79018d",
+      "name": "Wait",
+      "webhookId": "4109e2ce-181b-4f72-a81b-13e926b3b8ac",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://staging-api.mydatabreachattorney.com/api/campaigns",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request_for api1').item.json.data.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"entity_name\": \"{{ $('Google Sheets9').item.json['Entity Name'] }}\",\n  \"headquarters\": \"{{ $('Google Sheets9').item.json.Headquarters }}\",\n  \"impacted\":\"{{ $('Google Sheets9').item.json.Impacted }}\",\n  \"public_disclosure_date\": \"{{ $('Google Sheets9').item.json['Public Disclosure Date'] }}\",\n  \"information_compromised\": \"{{ $('Google Sheets9').item.json['Information Compromised'] }}\",\n  \"tier\": \"{{ $('Google Sheets9').item.json.Tier }}\",\n  \"company_name\": \"{{ $('Google Sheets9').item.json['Entity Name'] }}\", \n\"campaign_name\": \"{{ $('Google Sheets9').item.json['Entity Name'] }}\", \n  \n  \"company_url\": \" {{ $('Google Sheets9').item.json['Company URL'] }}\",\n \n  \"link_where_found\": \"{{ $('Google Sheets9').item.json['Link to Where I Found Out About the Breach'] }}\",\n  \"link_public_disclosure\": \"{{ $('Google Sheets9').item.json['Link to Public Disclosure (AG site/official source)'] }}\",\n  \"date_notice_letters_sent\": \" {{ $('Google Sheets9').item.json['Date Notice Letters Went Out'] }}\",\n  \"site_url\": \"{{ $('Google Sheets9').item.json['site url'] }}\",\n  \"notice_link\": \"{{ $('OpenAI3').item.json.choices[0].message.content['Data Breach Snapshot']['Notice Link'] }}\",\n\"duplicate\": \"Yes\"\n  \n}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7888,
+        6080
+      ],
+      "id": "3d50ab29-d1ac-4911-bcb5-9386bc3e921f",
+      "name": "HTTP Request",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://staging-api.mydatabreachattorney.com/api/auth/login",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "admin@zlk.com"
+            },
+            {
+              "name": "password",
+              "value": "admin123"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6704,
+        6032
+      ],
+      "id": "40f7ce29-00b2-4e73-bf22-dfc594e991a4",
+      "name": "HTTP Request_for api1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://staging-api.mydatabreachattorney.com/api/auth/token-status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request_for api1').item.json.data.token }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7152,
+        6032
+      ],
+      "id": "2b52ee67-9688-4a9c-88fc-d976dbda9c27",
+      "name": "HTTP Request1for checking api1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: HTML content from previous node 'Switch1'\nconst htmlContent = $('Switch1').first().json.html || \"\"; \n\n// Function to extract all http/https URLs\nfunction extractUrlsFromHtml(html) {\n    const urls = [];\n    const regex = /https?:\\/\\/[^\\s\"'<>]+/g; // Matches http or https URLs\n\n    let match;\n    while ((match = regex.exec(html)) !== null) {\n        urls.push(match[0]);\n    }\n\n    // Remove duplicates\n    return [...new Set(urls)];\n}\n\n// Extract URLs\nconst extractedUrls = extractUrlsFromHtml(htmlContent);\n\n// Map each URL to an object\nconst urlsArray = extractedUrls.map(u => ({ url: u }));\n\n// Return in the requested format\nreturn [{ json: { output: { urls: urlsArray } } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3568,
+        6416
+      ],
+      "id": "70333b32-28c9-4b12-9448-92b7b8e944e4",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12Hr5j-gg5hhfutp9hO1huHAtMqBUnlI_vdQ6onjqO-4",
+          "mode": "list",
+          "cachedResultName": "company details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12Hr5j-gg5hhfutp9hO1huHAtMqBUnlI_vdQ6onjqO-4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1754116457,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12Hr5j-gg5hhfutp9hO1huHAtMqBUnlI_vdQ6onjqO-4/edit#gid=1754116457"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company name": "={{ $('Google Sheets5').item.json['Entity Name'] }}"
+          },
+          "matchingColumns": [
+            "company name"
+          ],
+          "schema": [
+            {
+              "id": "company name",
+              "displayName": "company name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        7040,
+        4896
+      ],
+      "id": "8fdba94e-7d84-4594-b938-5e224a66b625",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7072,
+        5456
+      ],
+      "id": "90107843-21d5-4848-b9c6-7dfb36a82ce5",
+      "name": "Wait24",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "095b1c73-e376-450c-8f67-0f170e67a845",
+              "leftValue": "={{ $json.output.urls }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3776,
+        6416
+      ],
+      "id": "3c285a21-4f8c-41fd-8472-2c8d79e542e1",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "content": "## node behaviour\n**Double click** \nit has the mails and indivifusl mails consist of the urls , thesenode switch ,  it handles the html text of each , and then process these urls , then  run it othe basis of url present or not",
+        "height": 112,
+        "width": 992
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3136,
+        6160
+      ],
+      "typeVersion": 1,
+      "id": "4ff83668-a272-4085-b5aa-97693f0df64c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "duplicate node : same as the nain only runs for duplicate data",
+        "height": 176,
+        "width": 976
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        6896,
+        6000
+      ],
+      "typeVersion": 1,
+      "id": "25269b88-e539-422a-9232-dfe2c92dbb34",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2026-05-28T09:37:59.176-04:00",
+          "Readable date": "May 28th 2026, 9:37:59 am",
+          "Readable time": "9:37:59 am",
+          "Day of week": "Thursday",
+          "Year": "2026",
+          "Month": "May",
+          "Day of month": "28",
+          "Hour": "09",
+          "Minute": "37",
+          "Second": "59",
+          "Timezone": "America/New_York (UTC-04:00)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Wait5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI3": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets5": {
+      "main": [
+        [
+          {
+            "node": "OpenAI5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait18",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "OpenAI3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor3": {
+      "main": [
+        [
+          {
+            "node": "Split Out2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items4": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI4": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets6": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "OpenAI4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Information Extractor3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI5": {
+      "main": [
+        [
+          {
+            "node": "Google sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google sheet": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait19",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gmail4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait20",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets7": {
+      "main": [
+        [
+          {
+            "node": "Summarize1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait17",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize1": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets9": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request_for api1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait21",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gmail1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait22",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail3": {
+      "main": [
+        [
+          {
+            "node": "Summarize9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [
+          {
+            "node": "Summarize3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize9": {
+      "main": [
+        [
+          {
+            "node": "If21",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If21": {
+      "main": [
+        [
+          {
+            "node": "Gmail5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Workflow1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail5": {
+      "main": [
+        [
+          {
+            "node": "Split Out4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait17": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait18": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait19": {
+      "main": [
+        [
+          {
+            "node": "Google sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait20": {
+      "main": [
+        [
+          {
+            "node": "gmail4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait21": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait22": {
+      "main": [
+        [
+          {
+            "node": "gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize3": {
+      "main": [
+        [
+          {
+            "node": "If7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If7": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request_for api",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request_for api": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1for checking api",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1for checking api": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "gmail4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request_for api1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request_for api1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1for checking api1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1for checking api1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request_for api",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait24",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait24": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Split Out5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "callerPolicy": "any",
+    "errorWorkflow": "K4fdqDVnGAU12Z88",
+    "timeSavedMode": "fixed",
+    "executionTimeout": 1800,
+    "availableInMCP": false
+  },
+  "versionId": "0b4c7a2b-d99e-478b-bb03-9659ed1ff622",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "NZx9Zw5cZhGbbD2M",
+  "tags": []
+}

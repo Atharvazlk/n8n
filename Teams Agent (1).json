@@ -1,0 +1,524 @@
+{
+  "name": "Teams Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -816,
+        -208
+      ],
+      "id": "d8933142-a444-4cf2-85ed-837133d51466",
+      "name": "When chat message received",
+      "webhookId": "48212b68-6dfe-4ccf-bf0c-73c1d8b26078"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userMessage }}",
+        "options": {
+          "systemMessage": "You are a read-only research assistant over four breach-tracking Google Sheets:\nBreachSense, DataBreachSheet, generic data, and HOOKPHISH.\n\nRules:\n- Use the tool whose columns match the question. If a question could span\n  multiple sheets (e.g. \"what do we know about X\"), query all four and\n  combine the results.\n- Sheets may have inconsistent entity name spelling/formatting across each\n  other — note this if results seem to overlap or conflict.\n- Never suggest editing, approving, or scoring any row. You are for lookup\n  and summarization only.\n- If a question doesn't match any sheet's columns, say so rather than guessing.\n- Answer in plain, concise English, citing which sheet(s) the info came from.\n- If no matching rows are found, say so plainly.\n- Understand what the user is asking about and then look into the sheets for answers."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f1b658d5-8b3a-4d74-9680-89280dd1d5f9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        384
+      ],
+      "id": "ca43b879-f800-40d1-8302-a26e9509cd75",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lookup ransomware/leak-site breach records by entity, threat actor, or discovery date. Columns: date, Entity_Name, Website_Domain, Threat_Actor, Date_Discovered, Breach_Description, Leak_Size, Headquarters, Competitor Activity",
+        "documentId": {
+          "__rl": true,
+          "value": "1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w",
+          "mode": "list",
+          "cachedResultName": "BreachSense",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UUqKeAD7ODzcBk-LA7wzAdzTXCjLNw1oVqXzM-9Ke8w/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity_Name",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        384
+      ],
+      "id": "30cbb636-a37e-49f8-8625-4bf129961fdf",
+      "name": "Breachsense sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lookup general breach news records. Columns: Date, Entity Name, Headquarters, Impacted, Threat Actor, Date of Breach, Date Published, Information Compromised, Company URL, Summary",
+        "documentId": {
+          "__rl": true,
+          "value": "1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg",
+          "mode": "list",
+          "cachedResultName": "generic data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity Name",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        384
+      ],
+      "id": "4bd2e6cd-26fb-4e29-91af-f2e5cdf7cb9a",
+      "name": "Generic data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lookup legal-intake breach records with lead-qualification data. Columns: Date, Entity Name, Headquarters, Impacted, Public Disclosure Date, Information Compromised, Company URL, Date Notice Letters Went Out, Tier, Duplicate, Approved, Lead_probability.",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity Name",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        384
+      ],
+      "id": "0b07ead4-f975-4c80-8b68-c7d751e23dd4",
+      "name": "DataBreachSheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lookup ransomware-group attribution records by threat group or business sector. Columns: Date, Entity Name, Headquarters, Impacted, Date of Breach, Discovery Date, Region, Company URL, Business Sector, Threat Group, Summary",
+        "documentId": {
+          "__rl": true,
+          "value": "1ea8OT112z5bE2d1-Zz-Ezd03MwdqJSjAuYQHn8nA0LU",
+          "mode": "list",
+          "cachedResultName": "HOOKPHISH",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ea8OT112z5bE2d1-Zz-Ezd03MwdqJSjAuYQHn8nA0LU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ea8OT112z5bE2d1-Zz-Ezd03MwdqJSjAuYQHn8nA0LU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity Name",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        384
+      ],
+      "id": "979bb66d-02dd-494e-9df2-78ab7759f2c1",
+      "name": "Hookphish",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Prep message for agent').item.json.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        384
+      ],
+      "id": "13e95da8-56de-4555-a766-62bdac3f1b15",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "event": "newChatMessage",
+        "watchAllChats": true
+      },
+      "type": "n8n-nodes-base.microsoftTeamsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        0
+      ],
+      "id": "9d601cb0-9bf4-48c1-8449-9142d288f1d4",
+      "name": "Microsoft Teams Trigger",
+      "webhookId": "e87fc9fc-e83d-4193-8600-b30a15a51d61",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "QGcynjUranaU0TZ4",
+          "name": "Microsoft Teams Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "28535cc3-f312-4fee-94e0-d7549a3bde2d",
+              "name": "chatId",
+              "value": "={{ $json[\"@odata.id\"].match(/chats\\('([^']+)'\\)/)[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "ee6e9c3e-c5af-4023-852f-761ee3ce5020",
+              "name": "messageId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        0
+      ],
+      "id": "9346e1be-78ef-43fc-b526-b6bad17b175d",
+      "name": "Parse chat & message IDs"
+    },
+    {
+      "parameters": {
+        "resource": "chatMessage",
+        "operation": "get",
+        "chatId": {
+          "__rl": true,
+          "value": "={{ $json.chatId }}",
+          "mode": "id"
+        },
+        "messageId": "={{ $json.messageId }}"
+      },
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        0
+      ],
+      "id": "a67b157f-7ee4-46fd-bb6f-8a350483be7b",
+      "name": "Get chat message",
+      "webhookId": "4a6d9718-1831-4831-be78-33c08aedf190",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "QGcynjUranaU0TZ4",
+          "name": "Microsoft Teams Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8699fa8-b405-43f3-8101-81a33eaeeaa2",
+              "name": "chatId",
+              "value": "={{ $('Parse chat & message IDs').item.json.chatId }}",
+              "type": "string"
+            },
+            {
+              "id": "732a45a8-b233-45bf-82b4-e25613ceaccf",
+              "name": "userMessage",
+              "value": "={{ $json.body.content.replace(/<[^>]*>/g, '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "6b8acac7-4b04-4dc7-87b1-8f4ffded74f2",
+              "name": "senderName",
+              "value": "={{ $json.from.user.displayName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "0e70b818-78c0-49fe-8a46-b2cc55a42482",
+      "name": "Prep message for agent"
+    },
+    {
+      "parameters": {
+        "resource": "chatMessage",
+        "chatId": {
+          "__rl": true,
+          "value": "={{ $('Parse chat & message IDs').item.json.chatId }}",
+          "mode": "id"
+        },
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "d8db7d96-b2e8-41f7-988d-f5910c31ba8a",
+      "name": "Create chat message",
+      "webhookId": "65c33ca8-e9cd-4e0d-9d35-c8ecb1128414",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "QGcynjUranaU0TZ4",
+          "name": "Microsoft Teams Credential"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Breachsense sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generic data": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DataBreachSheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hookphish": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Teams Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse chat & message IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse chat & message IDs": {
+      "main": [
+        [
+          {
+            "node": "Get chat message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get chat message": {
+      "main": [
+        [
+          {
+            "node": "Prep message for agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep message for agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create chat message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "41e47195-05af-49c5-8730-7d0984d1f96b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "Qo3rqNCIma7T61eE",
+  "tags": []
+}

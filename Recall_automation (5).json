@@ -1,0 +1,2441 @@
+{
+  "name": "Recall_automation",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2832,
+        304
+      ],
+      "id": "490ccc54-8f51-41e0-9c86-d0dc76598e5b",
+      "name": "HTTP Request",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -3280,
+        640
+      ],
+      "id": "2588d2b2-b82f-49ed-bc92-4934c0b54b4e",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an assistant that extracts specific details from recall or safety announcement documents related to products.\n\nTask:\nFrom the provided {{ $json.data }},accurately extract the following details and present them in JSON format under a single top-level field named \"Recall Snapshot\". Also, provide a bullet-point section titled Recall Snapshot, with all titles in bold and values in plain text.\n\nFields to Extract (Inside Recall Snapshot)\n\nProduct Name – What the product is.\n\nNumber of Units Sold – The quantity of products recalled, distributed,Units, or sold (e.g., '127,887 pounds of pulled pork sandwich'). Extract the exact quantity mentioned, including units of measurement. If unavailable, write \"Not specified\".\n \n\nCost per Unit – The cost of a unit or after \"Sold Online At:\" or \"Sold At:\".If unavailable, write \"Not specified\".\n\nRemedy – Actions recommended (e.g., destroy product, return it, stop using it)or after \"Remedy:\"  keyword.\n\nHazard – The problem or risk associated with the product.\n\nTime Period – The period during which the product was sold or distributed. If unavailable, write \"Not specified\".\n\nDate – The date when the recall was announced generally find after Summary, e.g.: Company Announcement Date:or FDA Publish Date: or Recall Date:.\n\nWhere Sold – Locations or regions where the product was sold or distributed.\n\nLink of Announcement – The URL where the recall announcement is available.\n\nBrand Name – The brand associated with the product.\nTier- if Number of Units Sold is more than or equal to 100000 units then tier1 , otherwise tier2\n\nAdditional Instructions\n\nIf a link is provided in the recall description, follow the link and extract any missing or additional relevant information.\n\nInclude information from both the main text and the linked announcement, prioritizing:\n\nRemedy steps\n\nHazards\n\nDistribution areas\n\nDates\n\nIf the link cannot be followed or the information is unavailable, explicitly state \"Not specified\" for that field.\n\nPresent the output in JSON format with a single field \"Recall Snapshot\" containing all subfields.\n\nAlso provide a bullet-point section titled Recall Snapshot, where:\n\nTitles are bold\n\nValues are in plain text\n\nAll information is grouped under this section.\n\n\n\nRecall Snapshot \n\nProduct Name: \n\nNumber of Units Sold:\n\nCost per Unit:\n\nRemedy:\n\nHazard: \n\nTime Period: \n\nDate: \n\nWhere Sold:\n\nLink of Announcement:\n\nBrand Name:",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -2160,
+        304
+      ],
+      "id": "ba36a119-933a-4c86-aa76-ea4573a8a293",
+      "name": "OpenAI",
+      "retryOnFail": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak",
+          "mode": "list",
+          "cachedResultName": "recall",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "site url": "={{ $('Split Out').item.json.url}}",
+            "date": "={{ $now }}",
+            "Product Name": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Product Name'] }}",
+            "Number of Units Sold": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Number of Units Sold'] }}",
+            "Cost of Unit": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Cost per Unit'] }}",
+            "Remedy": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot'].Remedy }}",
+            "Hazard": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot'].Hazard }}",
+            "Time period": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Time Period'] }}",
+            "Incident date": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot'].Date }}",
+            "Where sold": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Where Sold'] }}",
+            "link of announcement": "={{ $('Split Out').item.json.url }}",
+            "Brand Name": "={{ $('OpenAI').item.json.choices[0].message.content[\"Recall Snapshot\"][\"Brand Name\"] }}",
+            "approved": "no",
+            "tier": "={{ $('OpenAI').item.json.choices[0].message.content[\"Recall Snapshot\"].Tier }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Brand Name",
+              "displayName": "Brand Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Number of Units Sold",
+              "displayName": "Number of Units Sold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cost of Unit",
+              "displayName": "Cost of Unit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Remedy",
+              "displayName": "Remedy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hazard",
+              "displayName": "Hazard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Time period",
+              "displayName": "Time period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Incident date",
+              "displayName": "Incident date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Where sold",
+              "displayName": "Where sold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "link of announcement",
+              "displayName": "link of announcement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tier",
+              "displayName": "tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "customer_base_size",
+              "displayName": "customer_base_size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headquater_location",
+              "displayName": "headquater_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved",
+              "displayName": "approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1136,
+        64
+      ],
+      "id": "a23f835e-a5a1-436c-b75f-a9658f46e63b",
+      "name": "Google Sheets1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2384,
+        128
+      ],
+      "id": "a0123d3d-5d94-4ffa-a42b-bab69ab2f2e4",
+      "name": "Wait",
+      "webhookId": "21c59062-0854-45bf-a4cd-5e289358307d"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Gmail Trigger').item.json.textAsHtml }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "2e221f3d-f820-46f9-9dbc-d164f8fa1eef"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "html"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "06d8ef34-72cb-49f4-8917-a3b9e9fdb04d",
+                    "leftValue": "={{ $('Gmail Trigger').item.json.textAsHtml }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -3952,
+        512
+      ],
+      "id": "f1087d55-bd26-4455-9aef-ce0e11c086e7",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an assistant that provides factual company information.\n\nGiven a company name, provide the following details:\n1. The company's industry\n2. An estimate of how large the customer base is\n3. The company's latest or estimated annual revenue\n4. The approximate number of employees\n\nRespond ONLY in this JSON format:\n\n{\n  \"company_name\": \"<Company Name>\",\n  \"industry\": \"<Industry>\",\n  \"customer_base_size\": \"<Approximate customer base size>\",\n  \"annual_revenue\": \"<Estimated annual revenue>\",\n  \"headquater_location\":\"headquater_location\",\n  \"city\":\"city in which it is\",\n  \"country\":\"country in which it is\",\n  \"employee_number\": \"<Approximate employee number>\"\n}\n\nCompany: {{ $json['Brand Name'] }}\n",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -912,
+        176
+      ],
+      "id": "05f77393-4e09-4430-8c83-dc128bf720c5",
+      "name": "OpenAI2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak",
+          "mode": "list",
+          "cachedResultName": "recall",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "employee_number": "={{ $json.choices[0].message.content.customer_base_size }}",
+            "annual_revenue": "={{ $json.choices[0].message.content.annual_revenue }}",
+            "city": "={{ $json.choices[0].message.content.city }}",
+            "country": "={{ $json.choices[0].message.content.country }}",
+            "company_name": "={{ $json.choices[0].message.content.company_name }}",
+            "customer_base_size": "={{ $json.choices[0].message.content.customer_base_size }}",
+            "headquater_location": "={{ $json.choices[0].message.content.headquater_location }}",
+            "industry": "={{ $json.choices[0].message.content.industry }}",
+            "date": "={{ $('Google Sheets1').item.json.date }}"
+          },
+          "matchingColumns": [
+            "date"
+          ],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Brand Name",
+              "displayName": "Brand Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Number of Units Sold",
+              "displayName": "Number of Units Sold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Cost of Unit",
+              "displayName": "Cost of Unit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Remedy",
+              "displayName": "Remedy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Hazard",
+              "displayName": "Hazard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Time period",
+              "displayName": "Time period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Incident date",
+              "displayName": "Incident date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Where sold",
+              "displayName": "Where sold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "link of announcement",
+              "displayName": "link of announcement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tier",
+              "displayName": "tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_base_size",
+              "displayName": "customer_base_size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headquater_location",
+              "displayName": "headquater_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved",
+              "displayName": "approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -560,
+        176
+      ],
+      "id": "92681aea-18c6-4c83-9bdd-6036831eac58",
+      "name": "Google sheet3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "umavchi@zlk.com,vkori@zlk.com",
+        "subject": "Recall Snapshot",
+        "message": "=<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2>🔔 Recall Leads Snapshot for {{ $('Google Sheets1').item.json['Brand Name'] }} \n        under {{ $('OpenAI').item.json.choices[0].message.content[\"Recall Snapshot\"].Tier }}:</h2>\n\n    <p><strong>Product Name:</strong> {{ $('Google Sheets1').item.json['Product Name'] }}</p>\n    <p><strong>Brand Name:</strong> {{ $('Google Sheets1').item.json['Brand Name'] }}</p>\n<p><strong>Number of Units Sold:</strong> {{ $('Google Sheets1').item.json['Number of Units Sold'] }}</p>\n   \n    <p><strong>Cost of Unit:</strong> {{ $('Google Sheets1').item.json['Cost of Unit'] }}</p>\n    <p><strong>Remedy:</strong> {{ $('Google Sheets1').item.json['Remedy'] }}</p>\n    <p><strong>Hazard:</strong> {{ $('Google Sheets1').item.json['Hazard'] }}</p>\n    <p><strong>Time Period:</strong> {{ $('Google Sheets1').item.json['Time period'] }}</p>\n    <p><strong>Incident Date:</strong> {{ $('Google Sheets1').item.json['Incident date'] }}</p>\n    <p><strong>Where Sold:</strong> {{ $('Google Sheets1').item.json['Where sold'] }}</p>\n    <p><strong>Link of Announcement:</strong><br>\n      <a href=\"{{ $('Google Sheets1').item.json['link of announcement'] }}\" target=\"_blank\">\n        {{ $('Google Sheets1').item.json['link of announcement'] }}\n      </a>\n    </p>\n\n    <hr>\n\n    <h3>🏢 Additional Company Information :generated by ai ,cross verify</h3>\n    <p><strong>Company Name:</strong> {{ $('OpenAI2').item.json.choices[0].message.content.company_name }}</p>\n    <p><strong>Industry:</strong> {{ $json.industry }}</p>\n    <p><strong>Annual Revenue:</strong> {{ $json.annual_revenue }}</p>\n    <p><strong>Headquarters Location:</strong> {{ $json.headquater_location }}</p>\n    <p><strong>City:</strong> {{ $json.city }}</p>\n    <p><strong>Country:</strong> {{ $json.country }}</p>\n    <p><strong>Employee Number:</strong> {{ $json.employee_number }}</p>\n  </body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        368
+      ],
+      "id": "b32b588a-2074-4c46-ae6a-8bd5d6130de1",
+      "name": "gmail3",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "notesInFlow": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak",
+          "mode": "list",
+          "cachedResultName": "recall",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "site url",
+              "lookupValue": "={{ $('Loop Over Items').item.json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1808,
+        304
+      ],
+      "id": "77bec0c3-a0cf-4e5b-b4a8-ab1b6e444fee",
+      "name": "Google Sheets2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0819223a-73fb-41b9-ab81-c81fd5981897",
+              "leftValue": "={{ $json.count_Product_Name }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1360,
+        64
+      ],
+      "id": "358130c3-1752-44f9-b256-1f896135434e",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "Product Name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        -1584,
+        64
+      ],
+      "id": "c3bfd1d5-13a2-4e44-93b3-47f85c521504",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak",
+          "mode": "list",
+          "cachedResultName": "recall",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "site url": "={{ $('Split Out').item.json.url }}",
+            "Duplicate": "Yes",
+            "approved": "no",
+            "date": "={{ $now}}",
+            "Product Name": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Product Name'] }}",
+            "Number of Units Sold": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Number of Units Sold'] }}",
+            "Brand Name": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Brand Name'] }}",
+            "Cost of Unit": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Cost per Unit'] }}",
+            "Remedy": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot'].Remedy }}",
+            "Hazard": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot'].Hazard }}",
+            "Time period": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Time Period'] }}",
+            "Incident date": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot'].Date }}",
+            "Where sold": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Where Sold'] }}",
+            "link of announcement": "={{ $('OpenAI').item.json.choices[0].message.content['Recall Snapshot']['Link of Announcement'] }}",
+            "tier": "={{ $('OpenAI').item.json.choices[0].message.content[\"Recall Snapshot\"].Tier }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Brand Name",
+              "displayName": "Brand Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Number of Units Sold",
+              "displayName": "Number of Units Sold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cost of Unit",
+              "displayName": "Cost of Unit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Remedy",
+              "displayName": "Remedy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hazard",
+              "displayName": "Hazard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Time period",
+              "displayName": "Time period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Incident date",
+              "displayName": "Incident date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Where sold",
+              "displayName": "Where sold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "link of announcement",
+              "displayName": "link of announcement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tier",
+              "displayName": "tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "customer_base_size",
+              "displayName": "customer_base_size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headquater_location",
+              "displayName": "headquater_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved",
+              "displayName": "approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -3728,
+        1136
+      ],
+      "id": "484d7feb-56e9-4a0d-820c-b7542fe7cc73",
+      "name": "Google Sheets4",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "umavchi@zlk.com,vkori@zlk.com",
+        "subject": "D-Recall",
+        "message": "=<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2>🔔 Recall Leads Snapshot for {{ $('Google Sheets4').item.json['Brand Name'] }} \n        under {{ $('OpenAI').item.json.choices[0].message.content[\"Recall Snapshot\"].Tier }} Duplicate:</h2>\n\n    <p><strong>Product Name:</strong> {{ $('Google Sheets4').item.json['Product Name'] }}</p>\n    <p><strong>Brand Name:</strong> {{ $('Google Sheets4').item.json['Brand Name'] }}</p>\n  <p><strong>Number of Units Sold:</strong>{{ $json['Number of Units Sold'] }} </p>\n    \n    {{ $json[\"Cost of Unit\"] ? `<p><strong>Cost of Unit:</strong> ${$json[\"Cost of Unit\"]}</p>` : \"\" }}\n    {{ $json[\"Remedy\"] ? `<p><strong>Remedy:</strong> ${$json[\"Remedy\"]}</p>` : \"\" }}\n    {{ $json[\"Hazard\"] ? `<p><strong>Hazard:</strong> ${$json[\"Hazard\"]}</p>` : \"\" }}\n    {{ $json[\"Time period\"] ? `<p><strong>Time Period:</strong> ${$json[\"Time period\"]}</p>` : \"\" }}\n    {{ $json[\"Incident date\"] ? `<p><strong>Incident Date:</strong> ${$json[\"Incident date\"]}</p>` : \"\" }}\n    {{ $json[\"Where sold\"] ? `<p><strong>Where Sold:</strong> ${$json[\"Where sold\"]}</p>` : \"\" }}\n\n    {{ $json[\"link of announcement\"] ? `\n    <p><strong>Link of Announcement:</strong><br>\n      <a href=\"${$json[\"link of announcement\"]}\" target=\"_blank\">\n        ${$json[\"link of announcement\"]}\n      </a>\n    </p>` : \"\" }}\n\n    \n    <p><strong>Duplicate:</strong> yes</p>\n\n    <hr>\n  </body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -3552,
+        816
+      ],
+      "id": "3b760265-1536-4179-bbf6-e21aed530efd",
+      "name": "gmail",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "notesInFlow": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -3504,
+        512
+      ],
+      "id": "33d88ec9-46ac-4651-8055-edd6e4b29c7a",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1584,
+        368
+      ],
+      "id": "2214a0cb-c251-478b-8df6-2ac0efacfbdc",
+      "name": "Wait10",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        -16
+      ],
+      "id": "2440bf92-b5ae-43c7-974b-d85d8db7c121",
+      "name": "Wait11",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -336,
+        80
+      ],
+      "id": "49943b1a-249f-4a9a-8dcb-2b02acb379df",
+      "name": "Wait12",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        368
+      ],
+      "id": "4e41d6e1-6c78-4df9-8044-1dbeb06074b9",
+      "name": "Wait13",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3504,
+        1232
+      ],
+      "id": "f16a4dd2-7fd1-4b13-a31e-06e3265a299d",
+      "name": "Wait14",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3280,
+        1168
+      ],
+      "id": "7d7fe743-a8b0-4e74-9be9-292635114112",
+      "name": "Wait15",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2016,
+        1248
+      ],
+      "typeVersion": 1,
+      "id": "73a242ab-9564-4cf4-8bef-0b410406ae31",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2016,
+        1248
+      ],
+      "typeVersion": 1,
+      "id": "04b0073c-7f16-4feb-b606-b32d9361a0c0",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1280,
+        288
+      ],
+      "typeVersion": 1,
+      "id": "4c61f87f-506b-437d-926f-2a4557951dfe",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## extracting the urlrunnng http requet to extract the web page through jena ai",
+        "height": 480,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3232,
+        -32
+      ],
+      "typeVersion": 1,
+      "id": "7b9c0cfd-5138-48a6-964b-ab7c16985e7b",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## this extract all url and run over them one by one",
+        "height": 260,
+        "width": 960
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3712,
+        1072
+      ],
+      "id": "74f8680d-17f6-4f70-b4dc-2122901cc6c1",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "=from:umavchi@zlk.com OR  from:marketing.landk@gmail.com OR  from:vkori@zlk.com OR from:adeshpande@zlk.com  subject:(\"Daily Product Recall Links\" OR \"Tabular Recall\")"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -4400,
+        688
+      ],
+      "id": "a2ff7862-f3b1-48f4-81f5-6e2974d2b87c",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9cecffed-f660-4948-8daa-48053474d44a",
+              "leftValue": "={{ $('Split Out').item.json.url}}",
+              "rightValue": "http://json-schema.org/draft-07/schema#",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "dcc88078-b70e-4ee7-8bce-bdf3052b1eb4",
+              "leftValue": "={{ $('Split Out').item.json.url}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3056,
+        304
+      ],
+      "id": "ddb0bf2c-84c9-4d45-a9ac-dc6c17bf8026",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: HTML content from previous node 'Switch1'\nconst htmlContent = $input.first().json.textAsHtml || $input.first().json.text || \"\";\n\n// Function to extract all http/https URLs\nfunction extractUrlsFromHtml(html) {\n    const urls = [];\n    const regex = /https?:\\/\\/[^\\s\"'<>]+/g; // Matches http or https URLs\n    let match;\n    while ((match = regex.exec(html)) !== null) {\n        urls.push(match[0]);\n    }\n    // Remove duplicates\n    return [...new Set(urls)];\n}\n\n// Extract all URLs\nconst extractedUrls = extractUrlsFromHtml(htmlContent);\n\n// Filter URLs that start with specific domains\nconst filteredUrls = extractedUrls.filter(url =>\n    url.startsWith(\"https://www.fda.gov/\") ||\nurl.startsWith(\"https://www.fsis.usda.gov/recalls-alerts/\") ||    url.startsWith(\"https://www.cpsc.gov/\") || url.startsWith(\"https://www.accessdata.fda.gov/\")|| url.startsWith(\"https://ld.scoutyourcase.com/\")\n);\n\n// Map each filtered URL to an object\nconst urlsArray = filteredUrls.map(u => ({ url: u }));\n\n// Always return data, even if no matches found\nreturn [{ json: { output: { urls: urlsArray } } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3728,
+        512
+      ],
+      "id": "fd5bcc89-462f-44e2-bae4-f63ecb843fe2",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "67a99101-216f-4a4b-b7fa-6c158ec1b17a",
+              "leftValue": "={{ $('Split Out').item.json.url }}",
+              "rightValue": "https://www.fsis.usda.gov/recalls-alerts/",
+              "operator": {
+                "type": "string",
+                "operation": "notStartsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2608,
+        304
+      ],
+      "id": "f572a877-c02c-440e-8bc2-f6a01c39abce",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node\n// Extract content between \"FSIS Announcement\" and \"Last Updated: <date>\" from HTML input\n\nconst htmlContent = $input.first().json.data;\n\nfunction extractFsisAnnouncement(html) {\n  if (!html) return { sliceText: \"\", lastUpdated: null };\n\n  // Regex pattern for Last Updated date (Month DD, YYYY)\n  const lastUpdatedRegex = /Last\\s*Updated:\\s*([A-Za-z]{3,9}\\.?[\\s\\-]?\\d{1,2},?\\s*\\d{4})/i;\n\n  // Normalize the HTML for easier searching\n  const normalized = html\n    .replace(/\\s+/g, \" \")\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<\\/p>/gi, \"\\n\")\n    .replace(/<\\/?[^>]+>/g, \"\"); // strip tags\n\n  // Find FSIS Announcement start\n  const startIdx = normalized.toLowerCase().indexOf(\"fsis announcement\");\n  if (startIdx === -1) {\n    return { sliceText: \"\", lastUpdated: null };\n  }\n\n  // Find \"Last Updated: <date>\" after that\n  const match = lastUpdatedRegex.exec(normalized.slice(startIdx));\n  if (!match) {\n    return { sliceText: \"\", lastUpdated: null };\n  }\n\n  const endIdx = startIdx + match.index; // where \"Last Updated\" starts\n  const betweenText = normalized\n    .slice(startIdx + \"fsis announcement\".length, endIdx)\n    .replace(/\\n{2,}/g, \"\\n\")\n    .trim();\n\n  const lastUpdated = match[1]?.trim() || null;\n\n  return { sliceText: betweenText, lastUpdated };\n}\n\n// Run extraction\nconst { sliceText, lastUpdated } = extractFsisAnnouncement(htmlContent);\n\n// Combine sliceText and lastUpdated into a single string\nconst data = `${sliceText} Last Updated: ${lastUpdated}`;\n\n// Return result\nreturn [\n  {\n    json: {\n      data, // combined content of the extracted text and the lastUpdated\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2384,
+        416
+      ],
+      "id": "1f702bbf-e437-4af7-9d73-c8fbc0f28ae8",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12jbJliVULpqftJGcoUPtEmxCIwn1tZLEAu2p1b3u-_M",
+          "mode": "list",
+          "cachedResultName": "Recall Tabular",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12jbJliVULpqftJGcoUPtEmxCIwn1tZLEAu2p1b3u-_M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12jbJliVULpqftJGcoUPtEmxCIwn1tZLEAu2p1b3u-_M/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -4272,
+        976
+      ],
+      "id": "f6f55b85-1fc7-47a3-bc26-417cc0f94f73",
+      "name": "Get row(s) in sheet1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "umavchi@zlk.com,vkori@zlk.com",
+        "subject": "Recall Snapshot",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1808,
+        928
+      ],
+      "id": "b9d75c60-261f-4e13-b3ba-90fb2210e2f8",
+      "name": "Send a message",
+      "webhookId": "fde0535f-7ac9-43cf-b477-7e6e88ee9e98",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 2,
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2608,
+        928
+      ],
+      "id": "dae3ed81-ebbb-48a3-909e-bf36780e59cb",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -2384,
+        880
+      ],
+      "id": "c2a84dc6-3d70-43df-bf6b-56752e67c78a",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Function Node\n// Groups recall rows by recalling firm\n// Stores products, quantities, recall numbers, and event URLs\n\nconst items = $input.all();\nconst grouped = {};\n\n// Helper: safely convert quantity to number\nfunction parseQuantity(qty) {\n  if (!qty) return 0;\n  const num = String(qty).replace(/,/g, \"\").match(/\\d+/);\n  return num ? Number(num[0]) : 0;\n}\n\n// 1️⃣ Group rows by recalling firm\nfor (const item of items) {\n  const row = item.json;\n  const firm = row[\"Recalling Firm\"] || row[\"recallingFirm\"];\n  if (!firm) continue;\n\n  if (!grouped[firm]) {\n    grouped[firm] = {\n      recallingFirm: firm,\n\n      header: {\n        category: row[\"Category\"],\n        ProductType:row[\"Product Type\"],\n        city: row[\"City\"],\n        state: row[\"State\"],\n        country: row[\"Country\"],\n        recallClass: row[\"Classification\"],\n        recallReason: row[\"Reason for Recall\"],\n        initiationDate: row[\"Recall Initiation Date\"],\n        reportDate: row[\"Report Date\"]\n      },\n\n      products: [],          // product descriptions\n      quantity: [],          // raw quantities\n      totalQuantity: 0,      // ✅ NEW: summed quantity\n      recallNumbers: [],     // ✅ NEW: recall number list\n      eventIds: []           // ✅ NEW: event ID URLs\n    };\n  }\n\n  // Product description\n  grouped[firm].products.push(\n    row[\"Product Description\"] || \"N/A\"\n  );\n\n  // Quantity (store raw + add to total)\n  const qty = row[\"Product Quantity\"] || \"0\";\n  grouped[firm].quantity.push(qty);\n  grouped[firm].totalQuantity += parseQuantity(qty);\n\n  // Recall Number\n  if (row[\"Recall Number\"]) {\n    grouped[firm].recallNumbers.push(row[\"Recall Number\"]);\n  }\n\n  // Event ID → URL transform\n  if (row[\"Event ID\"]) {\n    grouped[firm].eventIds.push(\n      `https://www.accessdata.fda.gov/scripts/ires/?Event=${row[\"Event ID\"]}`\n    );\n  }\n}\n\n// 2️⃣ Convert grouped object to n8n output format\nconst output = [];\n\nfor (const firm in grouped) {\n  output.push({\n    json: grouped[firm]\n  });\n}\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2832,
+        928
+      ],
+      "id": "301cff5c-4e1c-42b7-afbd-a3169a39b89b",
+      "name": "Code in JavaScript1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ------------------------------\n// Read snapshot data (EXACT STRUCTURE)\n// ------------------------------\nconst first = $input.first()?.json || {};\nconst snapshots = Array.isArray(first.data) ? first.data : [];\n \n// ------------------------------\n// Helper: safe clean text\n// ------------------------------\nfunction clean(t) {\n  if (t === null || t === undefined) return \"N/A\";\n  const s = String(t).trim();\n  if (/{{\\s*[\\w.]+\\s*}}/i.test(s)) return \"N/A\";\n  if (/{%\\s*[\\w.]+\\s*%}/i.test(s)) return \"N/A\";\n  if (!/[a-zA-Z0-9]/.test(s)) return \"N/A\";\n  return s;\n}\n \n// ------------------------------\n// Build Recall Snapshot HTML\n// ------------------------------\nlet html = \"\";\n \nsnapshots.forEach(snapshot => {\n  const brand = clean(snapshot.recallingFirm);\n  const h = snapshot.header || {};\n \n  const descriptions = Array.isArray(snapshot.products) ? snapshot.products : [];\n  const quantities = Array.isArray(snapshot.quantity) ? snapshot.quantity : [];\n  const eventLinks = Array.isArray(snapshot.eventIds) ? snapshot.eventIds : [];\n  const recallNumbers = Array.isArray(snapshot.recallNumbers) ? snapshot.recallNumbers : [];\n  const totalQty = snapshot.totalQuantity ?? \"N/A\";\n \n  html += `\n<div style=\"margin-bottom:36px; font-family:Arial, sans-serif; line-height:1.6;\">\n \n      <h3 style=\"margin:0 0 10px 0; font-size:18px; color:#111;\">\n        🔔 Recall Leads Snapshot – ${brand}\n</h3>\n \n      <p><strong>Brand Name:</strong> ${brand}</p>\n<p><strong>Product Type:</strong> ${clean(h.ProductType)}</p>\n<p><strong>Classification:</strong> ${clean(h.recallClass)}</p>\n<p><strong>Number of Units Sold:</strong> Multiple (see table below)</p>\n<p><strong>Total Quantity Recalled:</strong> ${clean(totalQty)}</p>\n<p><strong>City:</strong> ${clean(h.city)}</p>\n<p><strong>Country:</strong> ${clean(h.country)}</p>\n<p><strong>Recall Reason:</strong> ${clean(h.recallReason)}</p>\n<p><strong>Recall Initiation Date:</strong> ${clean(h.initiationDate)}</p>\n<p><strong>Report Date:</strong> ${clean(h.reportDate)}</p>\n \n      <table style=\"width:100%; border-collapse:collapse; margin-top:14px;\">\n<thead>\n<tr>\n<th style=\"border:1px solid #ddd; padding:8px; text-align:left;\">\n              Brand Name\n</th>\n<th style=\"border:1px solid #ddd; padding:8px; text-align:left;\">\n              Product Description\n</th>\n<th style=\"border:1px solid #ddd; padding:8px; text-align:left;\">\n              Quantity\n</th>\n<th style=\"border:1px solid #ddd; padding:8px; text-align:left;\">\n              Recall Number\n</th>\n<th style=\"border:1px solid #ddd; padding:8px; text-align:left;\">\n              FDA Event Link\n</th>\n</tr>\n</thead>\n<tbody>\n          ${\n            descriptions.map((desc, idx) => `\n<tr>\n<td style=\"border:1px solid #ddd; padding:8px; vertical-align:top;\">\n                  ${brand}\n</td>\n<td style=\"border:1px solid #ddd; padding:8px; vertical-align:top;\">\n                  ${clean(desc)}\n</td>\n<td style=\"border:1px solid #ddd; padding:8px; white-space:nowrap;\">\n                  ${clean(quantities[idx] ?? \"N/A\")}\n</td>\n<td style=\"border:1px solid #ddd; padding:8px;\">\n                  ${clean(recallNumbers[idx] ?? \"N/A\")}\n</td>\n<td style=\"border:1px solid #ddd; padding:8px;\">\n                  ${\n                    eventLinks[idx]\n                      ? `<a href=\"${eventLinks[idx]}\" target=\"_blank\">View Event</a>`\n                      : \"N/A\"\n                  }\n</td>\n</tr>\n            `).join(\"\")\n          }\n</tbody>\n</table>\n \n      <hr style=\"border:none; border-top:1px solid #ddd; margin-top:18px;\">\n</div>\n  `;\n});\n \n// ------------------------------\n// Final HTML wrapper\n// ------------------------------\nconst finalHtml = `\n<!DOCTYPE html>\n<html>\n<body style=\"padding:16px; background:#ffffff;\">\n    ${html || \"<p>No recall snapshot data found.</p>\"}\n</body>\n</html>\n`;\n \nreturn [{ json: { html: finalHtml } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2096,
+        880
+      ],
+      "id": "b677a86e-0399-445e-bffb-b06651055747",
+      "name": "Code in JavaScript2",
+      "executeOnce": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "content": "## for accessdata snapshot\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/sticky-notes/)",
+        "height": 256,
+        "width": 576
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3488,
+        1600
+      ],
+      "typeVersion": 1,
+      "id": "ee6c0a45-f9fe-440b-94bf-1bd181aa2ff5",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.subject }}",
+                    "rightValue": "Daily Product Recall Links",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aea9fe70-815c-4295-b36f-1a9733c0c063"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "url recall"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6ffa548d-14b8-4b6e-b6cb-0573f66d6ec3",
+                    "leftValue": "={{ $json.subject }}",
+                    "rightValue": "Tabular Recall",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Tabular recall"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -4176,
+        688
+      ],
+      "id": "339580e3-1abd-4ac5-a388-216214b81205",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Function Node\n * Purpose: Extract structured rows from HTML TABLE email content\n * Output: ONE item with parent metadata + rows array\n */\n\n// 1️⃣ Get HTML safely from common email nodes\nconst html =\n  items[0].json.html ||\n  items[0].json.body ||\n  items[0].json.textHtml ||\n  items[0].json.messageHtml ||\n  \"\";\n\nif (!html) {\n  return [{\n    json: {\n      error: \"No HTML found in email payload\",\n      rows: []\n    }\n  }];\n}\n\n// 2️⃣ Extract first table\nconst tableMatch = html.match(/<table[\\s\\S]*?<\\/table>/i);\nif (!tableMatch) {\n  return [{\n    json: {\n      error: \"No <table> found in email HTML\",\n      rows: []\n    }\n  }];\n}\n\nconst tableHtml = tableMatch[0];\n\n// 3️⃣ Extract rows\nconst rowRegex = /<tr[\\s\\S]*?<\\/tr>/gi;\nconst rows = tableHtml.match(rowRegex) || [];\n\n// 4️⃣ Extract cell values\nfunction extractCells(rowHtml) {\n  const cellRegex = /<(td|th)[^>]*>([\\s\\S]*?)<\\/\\1>/gi;\n  const cells = [];\n  let match;\n\n  while ((match = cellRegex.exec(rowHtml)) !== null) {\n    cells.push(\n      match[2]\n        .replace(/<br\\s*\\/?>/gi, \" \")\n        .replace(/<[^>]+>/g, \"\")\n        .replace(/&nbsp;/g, \" \")\n        .replace(/&amp;/g, \"&\")\n        .replace(/\\s+/g, \" \")\n        .trim()\n    );\n  }\n  return cells;\n}\n\n// 5️⃣ Header row\nconst headerCells = extractCells(rows[0] || []);\nconst headers = headerCells.map(h => h.trim());\n\n// 6️⃣ Build row objects\nconst dataRows = [];\n\nfor (let i = 1; i < rows.length; i++) {\n  const values = extractCells(rows[i]);\n  if (!values.length) continue;\n\n  const rowObj = {};\n  headers.forEach((header, idx) => {\n    rowObj[header] = values[idx] || \"\";\n  });\n\n  dataRows.push(rowObj);\n}\n\n// 7️⃣ Parent wrapper\nconst parentPayload = {\n  source: \"email_table\",\n  extracted_at: new Date().toISOString(),\n  row_count: dataRows.length,\n  rows: dataRows\n};\n\n// 8️⃣ Return SINGLE item\nreturn [\n  {\n    json: parentPayload\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4384,
+        912
+      ],
+      "id": "7cb4f24f-144b-4c53-b3fe-f55a1b8816d0",
+      "name": "Code in JavaScript3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12jbJliVULpqftJGcoUPtEmxCIwn1tZLEAu2p1b3u-_M",
+          "mode": "list",
+          "cachedResultName": "Recall Tabular",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12jbJliVULpqftJGcoUPtEmxCIwn1tZLEAu2p1b3u-_M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12jbJliVULpqftJGcoUPtEmxCIwn1tZLEAu2p1b3u-_M/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $now }}",
+            "Product Type": "={{ $json['Product Type'] }}",
+            "Recalling Firm": "={{ $json['Recalling Firm'] }}",
+            "City": "={{ $json.City }}",
+            "State/Province": "={{ $json['State/Province'] }}",
+            "Country": "={{ $json.Country }}",
+            "Classification": "={{ $json.Classification }}",
+            "Product Description": "={{ $json['Product Description'] }}",
+            "Product Quantity": "={{ $json['Product Quantity'] }}",
+            "Reason for Recall": "={{ $json['Reason for Recall'] }}",
+            "Recall Initiation Date": "={{ $json['Recall Initiation Date'] }}",
+            "Report Date": "={{ $json['Report Date'] }}",
+            "Recall Number": "={{ $json['Recall Number'] }}",
+            "Event ID": "={{ $json['Event ID'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product Type",
+              "displayName": "Product Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recalling Firm",
+              "displayName": "Recalling Firm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "State/Province",
+              "displayName": "State/Province",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Classification",
+              "displayName": "Classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product Description",
+              "displayName": "Product Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product Quantity",
+              "displayName": "Product Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason for Recall",
+              "displayName": "Reason for Recall",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recall Initiation Date",
+              "displayName": "Recall Initiation Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Report Date",
+              "displayName": "Report Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recall Number",
+              "displayName": "Recall Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Event ID",
+              "displayName": "Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2848,
+        1408
+      ],
+      "id": "92564d9a-5833-43e3-be24-4d85f6cec16d",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "data2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -4064,
+        1296
+      ],
+      "id": "17af2352-4a48-405a-a674-d9aff83ffcf5",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Deduplicate incoming rows using:\n * Product Description AND Recalling Firm\n * Return FULL rows with all parameters\n */\n\nconst incoming = $('Code in JavaScript3').first().json.rows || [];\nconst existing = $input.first().json.data2 || [];\n\nfunction normalize(val) {\n  return (val || \"\")\n    .toLowerCase()\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\n// Build existing uniqueness set (AND condition)\nconst existingKeySet = new Set();\n\nfor (const row of existing) {\n  const desc = normalize(row[\"Product Description\"]);\n  const firm = normalize(row[\"Recalling Firm\"]);\n\n  if (desc && firm) {\n    existingKeySet.add(`${desc}||${firm}`);\n  }\n}\n\nconst seenKeys = new Set();\nconst uniqueNewRows = [];\n\nfor (const row of incoming) {\n  const desc = normalize(row[\"Product Description\"]);\n  const firm = normalize(row[\"Recalling Firm\"]);\n\n  if (!desc || !firm) continue;\n\n  const key = `${desc}||${firm}`;\n\n  // ✅ AND condition enforced here\n  if (existingKeySet.has(key)) continue;\n  if (seenKeys.has(key)) continue;\n\n  seenKeys.add(key);\n  uniqueNewRows.push(row); // full row preserved\n}\n\nreturn uniqueNewRows;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3968,
+        1664
+      ],
+      "id": "1816ec1c-2e01-40da-829c-e2158d9c872b",
+      "name": "Code in JavaScript4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "OpenAI2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "OpenAI2": {
+      "main": [
+        [
+          {
+            "node": "Google sheet3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google sheet3": {
+      "main": [
+        [
+          {
+            "node": "gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gmail3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets4": {
+      "main": [
+        [
+          {
+            "node": "gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gmail": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait10": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait11": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait12": {
+      "main": [
+        [
+          {
+            "node": "Google sheet3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait13": {
+      "main": [
+        [
+          {
+            "node": "gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait14": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait15": {
+      "main": [
+        [
+          {
+            "node": "gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "any",
+    "executionTimeout": 1800,
+    "availableInMCP": false,
+    "errorWorkflow": "K4fdqDVnGAU12Z88"
+  },
+  "versionId": "de029c72-8fb3-420d-8d20-bf518eb85518",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "ayUQ8nSKjdjZLjcQ",
+  "tags": []
+}

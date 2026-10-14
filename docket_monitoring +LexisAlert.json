@@ -1,0 +1,1379 @@
+{
+  "name": "docket_monitoring +LexisAlert",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "from:thule@zlk.com OR from:amishra@zlk.com OR from:sgupta@zlk.com OR from:teammarketinglnk@gmail.com subject:(\"FW: [External]Updates for\" OR \"[External]Updates for\")"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        592
+      ],
+      "id": "7ae7f1dc-3c28-4d11-8d30-f56fd5058ee9",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        128,
+        320
+      ],
+      "id": "48c32c4a-136d-446c-83eb-b5f81a1d452b",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Extract from File').first().json.text;\n\n// --- Utility to match optional field ---\nfunction extractField(label) {\n  const regex = new RegExp(label + ':?\\\\s*(.*)', 'i');\n  return input.match(regex)?.[1]?.trim() || '';\n}\n\n// ✅ Extract Case Title\nconst caseTitle = input.match(/^([^\\n]*?(v\\.|V\\.|In Re:).*?)\\n/)?.[1]?.trim() || '';\n\n// ✅ Full Jurisdiction (court header between Docket and \"This case was retrieved on\")\nconst jurisdictionMatch = input.match(/US District Court Docket\\s*([\\s\\S]*?)This case was retrieved on/i);\nconst jurisdiction = jurisdictionMatch?.[1]?.replace(/\\n/g, ' ').trim() || '';\n\n// ✅ Proceeding Table Extraction\nconst proceedingsMatch = input.match(/Proceedings?\\s*#?.*?\\n([\\s\\S]*?)Copyright/i);\nconst rawProceedingText = proceedingsMatch?.[1]?.trim() || '';\nconst lines = rawProceedingText.split('\\n').map(l => l.trim()).filter(Boolean);\n\nconst tableRows = [];\nlet currentRow = null;\n\nfor (const line of lines) {\n  const match = line.match(/^(\\d+)\\s+(\\d{2}\\/\\d{2}\\/\\d{4})\\s+(.*)/);\n  if (match) {\n    if (currentRow) tableRows.push(currentRow);\n    currentRow = {\n      Number: match[1],\n      Date: match[2],\n      Description: match[3].trim()\n    };\n  } else if (currentRow) {\n    currentRow.Description += ' ' + line;\n  }\n}\nif (currentRow) tableRows.push(currentRow);\n\n// ✅ Extract Participants Section\nconst participantsMatch = input.match(/Participants\\s+Litigants Attorneys([\\s\\S]*?)\\nDefendant\\s+Proceedings/i);\nconst participantsBlock = participantsMatch?.[1]?.trim() || '';\nconst participantLines = participantsBlock.split('\\n').map(l => l.trim()).filter(Boolean);\n\n// ✅ Extract Plaintiff Names (from Participants > Litigants Attorneys section)\nconst plaintiffMatch = input.match(/Participants\\s+Litigants Attorneys\\s+([\\s\\S]*?)\\nPlaintiff/i);\nconst plaintiffName = plaintiffMatch?.[1]?.trim() || '';\n// ✅ Extract Defendant Names from lines before \"Proceedings\"\nconst beforeProceedingsMatch = input.match(/([\\s\\S]*?)Proceedings/i);\nconst beforeProceedingsBlock = beforeProceedingsMatch?.[1]?.trim() || '';\nconst beforeLines = beforeProceedingsBlock.split('\\n').map(l => l.trim()).filter(Boolean);\n\nconst defendantNames = [];\nfor (let i = 0; i < beforeLines.length - 1; i++) {\n  if (/^Defendant$/i.test(beforeLines[i + 1])) {\n    const nameLine = beforeLines[i]?.trim();\n    if (nameLine && !/ATTORNEY TO BE NOTICED/i.test(nameLine)) {\n      defendantNames.push(nameLine);\n    }\n  }\n}\n\n// ✅ Extract Raw Attorney Blocks Only\n// ✅ Extract Raw Attorney Blocks with newline formatting\nconst attorneys = [];\nlet currentBlock = [];\nlet insideAttorney = false;\n\nfor (let i = 0; i < participantLines.length; i++) {\n  const line = participantLines[i];\n\n  if (/ATTORNEY TO BE NOTICED/i.test(line)) {\n    if (currentBlock.length > 0) {\n      const formatted = currentBlock.join('\\n');\n      attorneys.push(formatted);\n      currentBlock = [];\n    }\n    currentBlock.push(participantLines[i - 1] || '');\n    currentBlock.push(line);\n    insideAttorney = true;\n    continue;\n  }\n\n  if (insideAttorney) {\n    currentBlock.push(line);\n    if (/Email:/i.test(line)) {\n      const formatted = currentBlock.join('\\n');\n      attorneys.push(formatted);\n      currentBlock = [];\n      insideAttorney = false;\n    }\n  }\n}\nif (currentBlock.length > 0) {\n  const formatted = currentBlock.join('\\n');\n  attorneys.push(formatted);\n}\n// ✅ Final Output\nreturn {\n  json: {\n    \"Case Title\": caseTitle,\n    \"Case Number\": extractField(\"Case Number\"),\n    \"Date Filed\": extractField(\"Date Filed\"),\n    \"Assigned To\": extractField(\"Assigned To\"),\n    \"Nature of Suit\": extractField(\"Nature of Suit\"),\n    \"Cause\": extractField(\"Cause\"),\n    \"Jurisdiction\": jurisdiction,\n    \"Court\": \"United States District Court\",\n    \"Demand Amount\": input.match(/Demand Amount:\\s*\\$?([\\d,]+)/)?.[1]?.trim() || '0',\n    \"Plaintiff Names\": plaintiffName,\n    \"Defendant Names\": defendantNames,\n    \"Attorneys\": attorneys,\n    \"Proceeding Table\": tableRows\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        320
+      ],
+      "id": "1a2f0619-3604-4ba2-8b81-e37deb386757",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "sendTo": "ishita@zlk.com",
+        "subject": "Docket monitoring ",
+        "message": "=<hr style=\"border: none; border-top: 1px solid #ccc; margin: 20px 0;\">\n<p style=\"font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;\">\n  <strong>📌 New Case on File: {{ $('Code').item.json[\"Case Title\"].split(',')[1]?.trim() || '' }}</strong><br>\n  &emsp;•&emsp;<strong>Case Number:</strong> {{ $('Code').item.json[\"Case Number\"] || 'N/A' }}<br>\n  &emsp;•&emsp;<strong>Date Filed:</strong> {{ $('Code').item.json[\"Date Filed\"] }}<br>\n  &emsp;•&emsp;<strong>Court Filed In:</strong> {{ $('Code').item.json[\"Jurisdiction\"] }}<br>\n \n  &emsp;•&emsp;<strong>Assigned To:</strong> {{ $('Code').item.json[\"Assigned To\"] || 'N/A' }}<br>\n  &emsp;•&emsp;<strong>Case Link:</strong> \n  <a href=\"{{ $('Code2').item.json.first_link|| '#' }}\" target=\"_blank\">\n    {{$('Code2').item.json.first_link|| 'N/A' }}\n  </a><br>\n  &emsp;•&emsp;<strong>Plaintiff/s Attorney/s:</strong>\n    {{ $('OpenAI').item.json.message.content.Plaintiff }}||\n{{\n  ($('OpenAI').item.json.message.content.Attorneys || [])\n    .map(a =>\n      `${a.Name || 'NA'}`\n    )\n    .join(',') || 'NA'\n}}\n\n<br>\n  &emsp;•&emsp;<strong>Case Related Excel Updated (Y/N):</strong> Y\n</p>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        -16
+      ],
+      "id": "d8f7d350-3518-40de-a002-7f5a5b2a5030",
+      "name": "Gmail",
+      "webhookId": "f5b7e6f1-70d2-455c-81a5-c575a420f3bc",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Dbbwk6iyW1bmjXVGuRcUfZXOythZAufUM4-PRDBEYfQ",
+          "mode": "list",
+          "cachedResultName": "docket",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dbbwk6iyW1bmjXVGuRcUfZXOythZAufUM4-PRDBEYfQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dbbwk6iyW1bmjXVGuRcUfZXOythZAufUM4-PRDBEYfQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "now": "={{ $now }}",
+            "DISTRICT CASE NO.": "={{ $json['Case Number'] }}",
+            "DATE FILED": "={{ $json['Date Filed'] }}",
+            "JUDGE ASSIGNED": "={{ $json['Assigned To'] }}",
+            "CIVIL ACTION": "={{ $('OpenAI').item.json.message.content.Plaintiff }}\n vs\n{{ $('OpenAI').item.json.message.content.Defendant }}",
+            "JURISDICTION": "={{ $json.Jurisdiction }}",
+            "DEFENDANT(S)": "={{ $('Code1').item.json.defendant_names }}",
+            "FIRMS LISTED ON COMPLAINT": "={{\n  ($('OpenAI').item.json.message.content.Attorneys || [])\n    .map(a =>\n      `Name: ${a.Name || 'NA'}\nRole: ${a.Role || 'NA'}\nFirm: ${a.Firm || 'NA'}\nAddress: ${a.Address || 'NA'}\nPhone: ${a.Phone || 'NA'}\nEmail: ${a.Email || 'NA'}`\n    )\n    .join('\\n\\n') || 'NA'\n}}\n",
+            "Link": "={{ $('Code2').item.json.first_link }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "now",
+              "displayName": "now",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CIVIL ACTION",
+              "displayName": "CIVIL ACTION",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DISTRICT CASE NO.",
+              "displayName": "DISTRICT CASE NO.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DATE FILED",
+              "displayName": "DATE FILED",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "JURISDICTION",
+              "displayName": "JURISDICTION",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "JUDGE ASSIGNED",
+              "displayName": "JUDGE ASSIGNED",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DEFENDANT(S)",
+              "displayName": "DEFENDANT(S)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "FIRMS LISTED ON COMPLAINT",
+              "displayName": "FIRMS LISTED ON COMPLAINT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PLAINTIFF'S\n RESIDENCE",
+              "displayName": "PLAINTIFF'S\n RESIDENCE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "COMPLAINT",
+              "displayName": "COMPLAINT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1600,
+        112
+      ],
+      "id": "006cf56c-a0a1-4b9e-b9a8-43bb1ba20d73",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1824,
+        176
+      ],
+      "id": "ba107a66-290a-499c-814a-8ad1c12ced7f",
+      "name": "Wait",
+      "webhookId": "d771e823-3152-48b9-ae82-f1da501c0298"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are given the following block of text from a court document:\n\n{{ $json.participants_block }}\n\nThis text always contains a section between **\"Litigants Attorneys\"** and **\"Proceedings\"**.\n\nYour task is to carefully extract and return the following structured information in **valid JSON format only**:\n\n{\n  \"Plaintiff\": \"Name of the plaintiff, or 'NA' if not found\",\n  \"Attorneys\": [\n    {\n      \"Name\": \"Attorney's full name, or 'NA'\",\n      \"Role\": \"Attorney's role (e.g., LEAD ATTORNEY, ATTORNEY TO BE NOTICED), or 'NA'\",\n      \"Firm\": \"Law firm name, or 'NA'\",\n      \"Address\": \"Full address, or 'NA'\",\n      \"Phone\": \"Phone number, or 'NA'\",\n      \"Email\": \"Email address, or 'NA'\"\n    }\n  ],\n  \"Defendant\": \"Name of the defendant, or 'NA' if not found\"\n}\n\n### Rules\n- If there are multiple plaintiffs, return the first one found.\n- If there are multiple defendants, return the first one found.\n- Extract **all attorneys** (not just the first one).\n- If any field does not exist in the text, set its value to `\"NA\"`.\n- Do not include extra commentary or explanation, only valid JSON as output.\n",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": "={{ true }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        800,
+        320
+      ],
+      "id": "067689bf-8627-4d9a-b740-0ef051f3fec1",
+      "name": "OpenAI",
+      "retryOnFail": false,
+      "alwaysOutputData": true,
+      "maxTries": 2,
+      "executeOnce": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "jGG4QwSusUyr95p7",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1152,
+        1024
+      ],
+      "id": "69b9aef0-377a-4030-ba73-74723c462854",
+      "name": "Wait1",
+      "webhookId": "584a104b-0000-496a-9380-2c52dbecc1bc"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = ($('Extract from File').first().json.text || \"\")\n  .replace(/\\r/g, \"\")\n  .replace(/[ \\t]+\\n/g, \"\\n\")\n  .trim();\n\nconst norm = s => (s || \"\").replace(/\\s+/g, \" \").trim();\nconst linesOf = s => (s || \"\").split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n// 1) Slice: after first \"Litigants Attorneys\" and BEFORE \"Proceedings\"\nfunction sliceParticipants(txt) {\n  const start =\n    txt.match(/Participants\\s*(?:\\n+| )Litigants\\s+Attorneys\\s*\\n/i) ||\n    txt.match(/Litigants\\s+Attorneys\\s*\\n/i);\n  if (!start) return \"\";\n  const after = txt.slice(start.index + start[0].length);\n  const end = after.match(/^\\s*Proceedings\\b/im);\n  return (end ? after.slice(0, end.index) : after).trim();\n}\n\n// 2) Parties extractor (Movant is treated as Plaintiff)\nfunction extractParties(block) {\n  const lines = linesOf(block);\n  const plaintiffs = new Set();\n  const defendants = new Set();\n  const roleRe = /^(Plaintiff|Defendant|Movant)\\b/i;\n\n  for (let i = 0; i < lines.length; i++) {\n    const line = lines[i];\n\n    // A) Same line: \"Name — Role\"\n    const same = line.match(/(.+?)\\s*[-–—]\\s*(Plaintiff|Defendant|Movant)\\b/i);\n    if (same) {\n      const name = norm(same[1]);\n      const role = same[2].toLowerCase();\n      if (role.startsWith(\"plaintiff\") || role.startsWith(\"movant\")) plaintiffs.add(name);\n      else if (role.startsWith(\"defendant\")) defendants.add(name);\n      continue;\n    }\n\n    // B) Role line then name on NEXT line\n    if (roleRe.test(line) && lines[i + 1]) {\n      const role = line.toLowerCase();\n      const name = norm(lines[i + 1]);\n      if (role.startsWith(\"plaintiff\") || role.startsWith(\"movant\")) plaintiffs.add(name);\n      else if (role.startsWith(\"defendant\")) defendants.add(name);\n      continue;\n    }\n\n    // C) Name line then role on NEXT line\n    if (lines[i + 1] && roleRe.test(lines[i + 1])) {\n      const role = lines[i + 1].toLowerCase();\n      const name = norm(line);\n      if (role.startsWith(\"plaintiff\") || role.startsWith(\"movant\")) plaintiffs.add(name);\n      else if (role.startsWith(\"defendant\")) defendants.add(name);\n      continue;\n    }\n  }\n\n  return { plaintiffs: [...plaintiffs], defendants: [...defendants] };\n}\n\n// 3) STRICT attorney parser matching your pattern\nfunction parseAttorneys(block) {\n  const L = linesOf(block);\n  // primary starts = exact marker lines\n  let starts = [];\n  for (let i = 0; i < L.length; i++) {\n    if (/^ATTORNEY\\s+TO\\s+BE\\s+NOTICED$/i.test(L[i])) starts.push(i);\n  }\n  // fallback: if no markers, allow Email:-based guessing\n  if (!starts.length) {\n    for (let i = 0; i < L.length; i++) {\n      if (/^Email:/i.test(L[i]) && i > 0) starts.push(i - 1);\n    }\n  }\n  if (!starts.length) return [];\n\n  // sort & dedupe\n  starts = [...new Set(starts)].sort((a, b) => a - b);\n\n  const attorneys = [];\n  for (let s = 0; s < starts.length; s++) {\n    const mark = starts[s];\n    const nextMark = s < starts.length - 1 ? starts[s + 1] : L.length;\n\n    // NAME = line above the marker (or the start)\n    const name = norm(L[mark - 1] || \"NA\");\n\n    // FIRM = first non-empty line after marker\n    let firm = \"NA\";\n    let firmLine = mark + 1;\n    while (firmLine < nextMark && !norm(L[firmLine])) firmLine++;\n    if (firmLine < nextMark) firm = norm(L[firmLine]);\n\n    // ADDRESS = subsequent lines until Phone/Fax/Email/next marker/role\n    const stopRe = /(Email:|Fax:|Phone:|\\(\\d{3}\\)\\s*\\d{3}-\\d{4}|\\b\\d{3}[-.\\s]\\d{3}[-.\\s]\\d{4}\\b|^ATTORNEY\\s+TO\\s+BE\\s+NOTICED$|^(Plaintiff|Defendant|Movant)\\b)/i;\n    const addressLines = [];\n    let i = firmLine + 1;\n    while (i < nextMark && !stopRe.test(L[i])) {\n      const line = norm(L[i]);\n      if (line) addressLines.push(line);\n      i++;\n    }\n    const address = addressLines.length ? addressLines.join(\", \") : \"NA\";\n\n    // CONTACTS within this block\n    let phone = \"NA\";\n    let email = \"NA\";\n    for (let j = firmLine + 1; j < nextMark; j++) {\n      const line = L[j] || \"\";\n      // phone\n      const p = line.match(/\\(\\d{3}\\)\\s*\\d{3}-\\d{4}|\\b\\d{3}[-.\\s]\\d{3}[-.\\s]\\d{4}\\b/);\n      if (p && phone === \"NA\") phone = p[0].trim();\n      // email\n      if (/Email:/i.test(line) || /@/.test(line)) {\n        const m = line.match(/Email:\\s*([^\\s;]+)/i) || line.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i);\n        if (m) email = (m[1] || m[0]).trim().toLowerCase();\n      }\n    }\n\n    // represents inferred from nearby lines (Movant => Plaintiff)\n    let represents = \"Unknown\";\n    const winStart = Math.max(0, mark - 3);\n    const winEnd = Math.min(L.length, mark + 4);\n    const windowTxt = L.slice(winStart, winEnd).join(\" \");\n    if (/\\bPlaintiff\\b/i.test(windowTxt) || /\\bMovant\\b/i.test(windowTxt)) represents = \"Plaintiff\";\n    else if (/\\bDefendant\\b/i.test(windowTxt)) represents = \"Defendant\";\n\n    const rawBlock = [\n      name,\n      \"ATTORNEY TO BE NOTICED\",\n      firm !== \"NA\" ? firm : null,\n      ...addressLines,\n      phone !== \"NA\" ? phone : null,\n      email !== \"NA\" ? `Email:${email}` : null\n    ].filter(Boolean).join(\"\\n\");\n\n    attorneys.push({\n      name: name || \"NA\",\n      firm,\n      role: \"ATTORNEY TO BE NOTICED\",\n      email,\n      phone,\n      address,\n      represents,\n      raw: rawBlock\n    });\n  }\n\n  return attorneys;\n}\n\n// 4) EXTRA plaintiff harvesting around \"ATTORNEY TO BE NOTICED\" markers\nfunction harvestPlaintiffsNearMarkers(block) {\n  const lines = linesOf(block);\n  const harvested = new Set();\n  const roleRe = /^(Plaintiff|Defendant|Movant)\\b/i;\n\n  for (let i = 0; i < lines.length; i++) {\n    if (!/^ATTORNEY\\s+TO\\s+BE\\s+NOTICED$/i.test(lines[i])) continue;\n\n    // scan backwards up to 6 lines for a role, take the line ABOVE as the party name\n    for (let k = i - 1; k >= Math.max(0, i - 6); k--) {\n      if (roleRe.test(lines[k])) {\n        const role = lines[k].toLowerCase();\n        const nameLine = (k - 1 >= 0) ? norm(lines[k - 1]) : \"\";\n        if (!nameLine) break;\n\n        if (role.startsWith(\"plaintiff\") || role.startsWith(\"movant\")) harvested.add(nameLine);\n        break;\n      }\n    }\n  }\n  return [...harvested];\n}\n\n// 5) Second \"Litigants Attorneys\" fallback to find Defendant\nfunction secondBlockDefendant(txt) {\n  const re = /Litigants\\s+Attorneys\\s*\\n/gi;\n  const starts = [];\n  let m;\n  while ((m = re.exec(txt)) !== null) {\n    starts.push(m.index + m[0].length);\n    if (starts.length > 5) break;\n  }\n  if (starts.length < 2) return null;\n\n  const afterSecond = txt.slice(starts[1]);\n  const end = afterSecond.match(/^\\s*Proceedings\\b/im);\n  const block = (end ? afterSecond.slice(0, end.index) : afterSecond).trim();\n  const lines = linesOf(block);\n\n  let atIdx = lines.findIndex(l => /^ATTORNEY\\s+TO\\s+BE\\s+NOTICED$/i.test(l));\n  if (atIdx === -1) atIdx = lines.findIndex(l => /^Email:/i.test(l));\n\n  for (let i = 0; i < (atIdx === -1 ? lines.length : atIdx); i++) {\n    const same = lines[i].match(/(.+?)\\s*[-–—]\\s*(Defendant)\\b/i);\n    if (same) return norm(same[1]);\n    if (/^Defendant\\b/i.test(lines[i]) && lines[i + 1]) return norm(lines[i + 1]);\n    if (lines[i + 1] && /^Defendant\\b/i.test(lines[i + 1])) return norm(lines[i]);\n  }\n  if (atIdx > 0) return norm(lines[atIdx - 1]);\n  return null;\n}\n\n// ---- RUN ----\nconst participants_block = sliceParticipants(raw);\n\n// parties from role patterns\nconst { plaintiffs, defendants } = extractParties(participants_block);\n\n// attorneys parsed strictly\nconst attorneys = parseAttorneys(participants_block);\nconst attorneyNamesSet = new Set(attorneys.map(a => a.name.toLowerCase()));\n\n// extra plaintiff candidates harvested around markers\nconst harvestedPlaintiffs = harvestPlaintiffsNearMarkers(participants_block);\n\n// combine + dedupe plaintiffs (Movant already mapped to Plaintiff)\nlet plaintiff_names = [...new Set([...plaintiffs, ...harvestedPlaintiffs].map(norm))];\n\n// remove any attorney names from plaintiffs\nplaintiff_names = plaintiff_names.filter(n => !attorneyNamesSet.has(n.toLowerCase()));\n\n// defendants\nlet defendant_names = [...new Set(defendants.map(norm))];\n\n// if no defendant found, try the second-block rule\nif (!defendant_names.length) {\n  const def2 = secondBlockDefendant(raw);\n  if (def2) defendant_names.push(def2);\n}\n\n// ensure non-empty arrays\nif (!plaintiff_names.length) plaintiff_names = [\"NA\"];\nif (!defendant_names.length) defendant_names = [\"NA\"];\n\nreturn [\n  {\n    json: {\n      participants_block,\n      plaintiff_names,\n      defendant_names,\n      attonery: { list: attorneys, count: attorneys.length }\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        320
+      ],
+      "id": "5f7b4e24-8341-4b9a-92e4-3af87399437c",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "function extractLexisDocketLinks(text) {\n  if (!text) return [];\n\n  // Regex: match only links that start with https://advance.lexis.com/api/docket?\n  const regex = /https:\\/\\/advance\\.lexis\\.com\\/api\\/docket\\?[^\\s\"]+/gi;\n\n  const matches = text.match(regex);\n  return matches ? matches : [];\n}\n\n// Get the input text from Gmail Trigger\nconst sampleText = $('Gmail Trigger').first().json.text;\n\n// Extract only LexisNexis docket links\nconst links = extractLexisDocketLinks(sampleText);\n\n// Return as n8n output\nreturn [\n  {\n    json: {\n      links,                    // array of only Lexis docket links\n      first_link: links[0] || 'NA'  // first one only, or NA\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        320
+      ],
+      "id": "723ccb0a-2c93-48c4-9349-7c67fb502d01",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b1b1597-fc38-4d28-b325-439d0d37d1cb",
+              "leftValue": "={{ $('Gmail Trigger').item.json.subject }}",
+              "rightValue": "Attorney/Law",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        320
+      ],
+      "id": "3d386305-25a1-4e71-bbdc-e91c2c56a02d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "ishita@zlk.com",
+        "subject": "Docket monitoring ",
+        "message": "=<hr style=\"border: none; border-top: 1px solid #ccc; margin: 20px 0;\">\n<p style=\"font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;\">\n  <strong>📌 New Case on File: {{ $('Code').item.json[\"Case Title\"].split(',')[1]?.trim() || '' }}</strong><br>\n  &emsp;•&emsp;<strong>Case Number:</strong> {{ $('Code').item.json[\"Case Number\"] || 'N/A' }}<br>\n  &emsp;•&emsp;<strong>Date Filed:</strong> {{ $('Code').item.json[\"Date Filed\"] }}<br>\n  &emsp;•&emsp;<strong>Court Filed In:</strong> {{ $('Code').item.json[\"Jurisdiction\"] }}<br>\n \n  &emsp;•&emsp;<strong>Assigned To:</strong> {{ $('Code').item.json[\"Assigned To\"] || 'N/A' }}<br>\n  &emsp;•&emsp;<strong>Case Link:</strong> \n  <a href=\"{{ $('Code2').item.json.first_link|| '#' }}\" target=\"_blank\">\n    {{$('Code2').item.json.first_link|| 'N/A' }}\n  </a><br>\n  &emsp;•&emsp;<strong>Plaintiff/s Attorney/s:</strong>\n    {{ $('OpenAI').item.json.message.content.Plaintiff }}||\n{{\n  ($('OpenAI').item.json.message.content.Attorneys || [])\n    .map(a =>\n      `${a.Name || 'NA'}`\n    )\n    .join(',') || 'NA'\n}}\n\n<br>\n  &emsp;•&emsp;<strong>Case Related Excel Updated (Y/N):</strong> Y\n</p>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        368
+      ],
+      "id": "de9b6778-2b4a-4c5c-8657-ebff60476bcb",
+      "name": "Gmail1",
+      "webhookId": "f5b7e6f1-70d2-455c-81a5-c575a420f3bc",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Dbbwk6iyW1bmjXVGuRcUfZXOythZAufUM4-PRDBEYfQ",
+          "mode": "list",
+          "cachedResultName": "docket",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dbbwk6iyW1bmjXVGuRcUfZXOythZAufUM4-PRDBEYfQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1351947475,
+          "mode": "list",
+          "cachedResultName": "AttorneyUpdates",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dbbwk6iyW1bmjXVGuRcUfZXOythZAufUM4-PRDBEYfQ/edit#gid=1351947475"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "now": "={{ $now }}",
+            "DISTRICT CASE NO.": "={{ $json['Case Number'] }}",
+            "DATE FILED": "={{ $json['Date Filed'] }}",
+            "JUDGE ASSIGNED": "={{ $json['Assigned To'] }}",
+            "CIVIL ACTION": "={{ $('OpenAI').item.json.message.content.Plaintiff }}\n vs\n{{ $('OpenAI').item.json.message.content.Defendant }}",
+            "JURISDICTION": "={{ $json.Jurisdiction }}",
+            "DEFENDANT(S)": "={{ $('Code1').item.json.defendant_names }}",
+            "FIRMS LISTED ON COMPLAINT": "={{\n  ($('OpenAI').item.json.message.content.Attorneys || [])\n    .map(a =>\n      `Name: ${a.Name || 'NA'}\nRole: ${a.Role || 'NA'}\nFirm: ${a.Firm || 'NA'}\nAddress: ${a.Address || 'NA'}\nPhone: ${a.Phone || 'NA'}\nEmail: ${a.Email || 'NA'}`\n    )\n    .join('\\n\\n') || 'NA'\n}}\n",
+            "Link": "={{ $('Code2').item.json.first_link }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "now",
+              "displayName": "now",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CIVIL ACTION",
+              "displayName": "CIVIL ACTION",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DISTRICT CASE NO.",
+              "displayName": "DISTRICT CASE NO.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DATE FILED",
+              "displayName": "DATE FILED",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "JURISDICTION",
+              "displayName": "JURISDICTION",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "JUDGE ASSIGNED",
+              "displayName": "JUDGE ASSIGNED",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DEFENDANT(S)",
+              "displayName": "DEFENDANT(S)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "FIRMS LISTED ON COMPLAINT",
+              "displayName": "FIRMS LISTED ON COMPLAINT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PLAINTIFF'S\n RESIDENCE",
+              "displayName": "PLAINTIFF'S\n RESIDENCE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "COMPLAINT",
+              "displayName": "COMPLAINT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1600,
+        496
+      ],
+      "id": "921971f5-5b0d-4f04-89bf-742050bb2a90",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1824,
+        560
+      ],
+      "id": "ef9a5608-daf7-45a5-a828-4afd20929513",
+      "name": "Wait2",
+      "webhookId": "d771e823-3152-48b9-ae82-f1da501c0298"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.subject }}",
+                    "rightValue": "FW: [External]Updates for Litigant alert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "c684ed62-33f0-4de2-bb28-4da21beeeb85"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "=docket1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4d495f90-48ea-42a8-a108-18b35d73daf1",
+                    "leftValue": "={{ $json.subject }}",
+                    "rightValue": "FW: [External]Updates for Track alert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "docket"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "021d526d-f32f-42ad-9845-9c1b52eb023e",
+                    "leftValue": "={{ $json.subject }}",
+                    "rightValue": "FW: [External]Updates for Keyword alert 'Keywords: \"Class Action\"'",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lexisalerts1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a58045a7-1067-4f1a-9303-62992d2c6c56",
+                    "leftValue": "={{ $json.subject }}",
+                    "rightValue": "FW: [External]Updates for Keyword alert 'Keywords: \"data breach\" AND complaint AND (jury OR \"jury demand\")'",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lexisalerts"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -96,
+        560
+      ],
+      "id": "c25850e2-19b1-4b3c-a57c-65ff11f8d68a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --------------------------------------------------\n// Get HTML email body safely\n// --------------------------------------------------\nconst html =\n  $('Gmail Trigger').first()?.json?.html ||\n  $('Gmail Trigger').first()?.json?.textAsHtml ||\n  $('Gmail Trigger').first()?.json?.text ||\n  \"\";\n\n// --------------------------------------------------\n// Helpers\n// --------------------------------------------------\nfunction clean(text) {\n  if (!text) return \"N/A\";\n  return text\n    .replace(/<a[^>]*>(.*?)<\\/a>/gi, \"$1\")\n    .replace(/<[^>]+>/g, \"\")\n    .replace(/&nbsp;/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\n// --------------------------------------------------\n// Regex to extract rows and cells\n// --------------------------------------------------\nconst rowRegex = /<tr[^>]*>([\\s\\S]*?)<\\/tr>/gi;\nconst cellRegex = /<t[dh][^>]*>([\\s\\S]*?)<\\/t[dh]>/gi;\n\nlet data = [];\nlet rowMatch;\n\n// --------------------------------------------------\n// Parse table rows\n// --------------------------------------------------\nwhile ((rowMatch = rowRegex.exec(html)) !== null) {\n  let cells = [];\n  let cellMatch;\n\n  while ((cellMatch = cellRegex.exec(rowMatch[1])) !== null) {\n    cells.push(clean(cellMatch[1]));\n  }\n\n  // Skip header or malformed rows\n  if (\n    cells.length < 9 ||\n    cells[0].toLowerCase().includes(\"docket\")\n  ) {\n    continue;\n  }\n\n  data.push({\n    docket_number: cells[0],\n    case_name: cells[1],\n    court: cells[2],\n    participant: cells[3],\n    description: cells[4],\n    nature_of_suit: cells[5],\n    complaint: cells[6],\n    date_hit: cells[7],\n    date_filed: cells[8],\n  });\n}\n\n// --------------------------------------------------\n// Return wrapped structure (NO data0)\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      data\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        976
+      ],
+      "id": "236dcf4a-fbc0-4a40-b373-dbdac8b95ca3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        352,
+        976
+      ],
+      "id": "3c16f857-3f34-439f-a15d-1b8a704626c5",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "data1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        864,
+        832
+      ],
+      "id": "31bcf1a8-1a70-426d-8971-58e2c6b3119a",
+      "name": "Aggregate",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "sendTo": "ishita@zlk.com",
+        "subject": "lexisAlert",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2272,
+        832
+      ],
+      "id": "b3e5111e-fca3-479d-82ee-fe562d2d2c8b",
+      "name": "Send a message1",
+      "webhookId": "fde0535f-7ac9-43cf-b477-7e6e88ee9e98",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---------- Helpers ----------\nfunction toDate(raw) {\n  if (raw === undefined || raw === null || raw === \"\") return \"N/A\";\n  const s = String(raw).trim();\n  const n = Number(s);\n  if (!Number.isFinite(n)) {\n    const m = s.match(/^\\d{4}-\\d{2}-\\d{2}/);\n    return m ? m[0] : s;\n  }\n  const ms = s.length >= 13 ? n : Math.floor(n) * 1000;\n  const d = new Date(ms);\n  return isNaN(d.getTime()) ? \"N/A\" : d.toISOString().slice(0, 10);\n}\n\nfunction firstNonEmpty(...vals) {\n  for (const v of vals) {\n    if (v !== undefined && v !== null && String(v).trim() !== \"\") return v;\n  }\n  return \"N/A\";\n}\n\n// ---------- Get docket data robustly ----------\nconst first = $input.first()?.json || {};\nlet dockets = [];\n\nif (Array.isArray(first.data1)) {\n  dockets = first.data1;\n} else if (Array.isArray(first.data)) {\n  dockets = first.data;\n} else {\n  dockets = $input.all().map(i => i.json || {});\n}\n\n// ---------- Build table rows ----------\nlet rows = \"\";\n\ndockets.forEach((d, index) => {\n  const docketNo = firstNonEmpty(d[\"Docket #\"], d.docket_number);\n  const caseName = firstNonEmpty(d[\"Case Name\"], d.case_name);\n  const court = firstNonEmpty(d.Court, d.court);\n  const participant = firstNonEmpty(d.Participant, d.participant);\n  const description = firstNonEmpty(d.Description, d.description);\n  const nature = firstNonEmpty(d[\"Nature of Suit\"], d.nature_of_suit);\n  const complaint = firstNonEmpty(d.Complaint, d.complaint);\n  const dateHit = toDate(firstNonEmpty(d[\"Date Hit\"], d.date_hit));\n  const dateFiled = toDate(firstNonEmpty(d[\"Date filed\"], d.date_filed));\n\n  rows += `\n    <tr>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${index + 1}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${docketNo}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${caseName}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${court}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${participant}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${description}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${nature}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${complaint}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${dateHit}</td>\n      <td style=\"padding:8px; border:1px solid #ddd; font-size:13px;\">${dateFiled}</td>\n    </tr>\n  `;\n});\n\n// ---------- Build full HTML ----------\nconst html = `\n<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; color:#222;\">\n    <h2 style=\"font-size:18px; margin-bottom:6px;\">📄 Daily LexisAlert Table</h2>\n    <p style=\"font-size:13px; margin-top:0; margin-bottom:14px;\">\n      Below is the summary of docket activity extracted from incoming emails.\n    </p>\n\n    <table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"\n      style=\"border-collapse:collapse; border:1px solid #ddd;\">\n      <thead>\n        <tr style=\"background-color:#f5f5f5;\">\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">#</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Docket #</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Case Name</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Court</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Participant</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Description</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Nature of Suit</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Complaint</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Date Hit</th>\n          <th style=\"padding:8px; border:1px solid #ddd; font-size:12px;\">Date Filed</th>\n        </tr>\n      </thead>\n      <tbody>\n        ${\n          rows.trim()\n            ? rows\n            : `<tr>\n                 <td colspan=\"10\" style=\"padding:8px; border:1px solid #ddd; font-size:13px; text-align:center;\">\n                   No new docket activity found.\n                 </td>\n               </tr>`\n        }\n      </tbody>\n    </table>\n  </body>\n</html>\n`;\n\n// ---------- Return for Gmail / Teams ----------\nreturn [{ json: { html } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        752
+      ],
+      "id": "ffeda6c2-45a8-4171-9d76-7c0383ad2531",
+      "name": "Code in JavaScript2",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => { const data = { ...item.json }; // Remove the key \nif (\"count_row_number\" in data) { delete data.count_row_number; } // Return cleaned item\n                                return { json: data }; });\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        832
+      ],
+      "id": "88e250e9-748c-4628-a30f-95f579f23baf",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "batchSize": 20,
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out1'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        832
+      ],
+      "id": "5be01643-fede-4eb9-a939-548c1c1f36fb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "data1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        752
+      ],
+      "id": "d88c0362-af98-44c1-bd71-19821f80ae4b",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data1",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        832
+      ],
+      "id": "d3ec95f6-f982-4344-a231-a363edbe6d6f",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "109-FCUUUQTYQKBy4t23j4bYFLyMg2LuttQTbJrZh2VQ",
+          "mode": "list",
+          "cachedResultName": "LexisAlert",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/109-FCUUUQTYQKBy4t23j4bYFLyMg2LuttQTbJrZh2VQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eIEUQ6c46agsX7F3Pn7KTRa1sv5m65a-Edi4YkxP7rw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $now }}",
+            "Docket #": "={{ $json.docket_number }}",
+            "Case Name": "={{ $json.case_name }}",
+            "Court": "={{ $json.court }}",
+            "Participant": "={{ $json.participant }}",
+            "Description": "={{ $json.description }}",
+            "Nature of Suit": "={{ $json.nature_of_suit }}",
+            "Complaint": "={{ $json.complaint }}",
+            "Date Hit": "={{ $json.date_hit }}",
+            "Date filed": "={{ $json.date_filed }}"
+          },
+          "matchingColumns": [
+            "ad_library_id"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Docket #",
+              "displayName": "Docket #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Case Name",
+              "displayName": "Case Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Court",
+              "displayName": "Court",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Participant",
+              "displayName": "Participant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nature of Suit",
+              "displayName": "Nature of Suit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Complaint",
+              "displayName": "Complaint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date Hit",
+              "displayName": "Date Hit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date filed",
+              "displayName": "Date filed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        864,
+        1024
+      ],
+      "id": "decce609-8efe-4a72-8a94-547288f1e405",
+      "name": "Append row in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        576,
+        976
+      ],
+      "id": "936c1dd8-8ae5-4d04-aa26-4ea26faa0345",
+      "name": "Loop Over Items5",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "content": "##this is lexis alert flow\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/sticky-notes/)",
+        "height": 496,
+        "width": 2352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        64,
+        752
+      ],
+      "typeVersion": 1,
+      "id": "e2675d45-cbc3-43aa-b208-75b45af744d2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "##this isdocket monitoring flow\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/sticky-notes/)",
+        "height": 528,
+        "width": 2544,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -256,
+        192
+      ],
+      "typeVersion": 1,
+      "id": "31bfcc01-790a-418f-9e46-b3f5363abdaf",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "any",
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "errorWorkflow": "K4fdqDVnGAU12Z88"
+  },
+  "versionId": "3b12393f-5ebc-43c5-a82f-e7681f1d7fae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "kSkNmyBzRTO4cSi8",
+  "tags": []
+}

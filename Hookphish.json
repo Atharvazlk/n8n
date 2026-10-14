@@ -1,0 +1,761 @@
+{
+  "name": "Hookphish",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.urll }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1872,
+        448
+      ],
+      "id": "984bb812-ee8a-40d4-8b8a-18354bfc11c5",
+      "name": "HTTP Request",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name==='Split Out'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1648,
+        688
+      ],
+      "id": "cadd2f50-5ad0-49e7-aaaf-f24f395e37e0",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "= From the provided {{ $json.data }}, extract and present the following information in bullet points under the title \"Data Breach Snapshot\". Use the exact format shown below. \n  \nInstructions: \n  \nBold only the field titles. The values should remain un bolded. \n \nIf data is missing for a required field, follow the fallback instructions provided. Don't hallucinate, mention NA if you don't find any details. Perform a websearch wherever it is mentioned. \n  \nField Details to Extract: \n  \nEntity Name: Name of the organization that experienced the breach. \n  \nHeadquarters: City and State of the organization. Perform a web search if this information is not found in the data. Mention NA if cannot be searched \n \n# Impacted: Number of individuals/people or records impacted or exposed or affected. Mention the size of leak if available. If not specified, enter NA \n Date of Breach: Date of the breach, or incident or ransomware attack as reported. If not specified, enter NA \n \nDate Published; Date when the article was published \nInformation Compromised: List all the types of personal data (e.g., Names, SSN, DOB), separated by commas. Mention any type of information that was exposed or leaked. Mention NA if nothing is available \n \nLink to Where I Found Out About the Breach: Include the original source URL from the input data. \nExternal Source Link: Any other link that is mentioned in the article \nCompany URL: The official website of the breached entity. Search the web if not available in the input.  \nPresent the extracted data in this exact structured snapshot format: \n  \nData Breach Snapshot \n  \nEntity Name:  \nHeadquarters:  \n# Impacted:  \n Date of Breach: \nDate Published: \nInformation Compromised:  \nLink to Where I Found Out About the Breach:  \nExternal Source Link:  \nCompany URL: ",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2096,
+        448
+      ],
+      "id": "025f8167-d989-49dc-a2ba-349e8253eaea",
+      "name": "OpenAI",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg",
+          "mode": "list",
+          "cachedResultName": "generic data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_Z-45zdlIUI8ioXpsK1-V8OsD0Nm8OLzo59X_Z_1Pak/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Headquarters": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot'].Headquarters }}",
+            "Link to Where I Found Out About the Breach": "={{ $('Loop Over Items').item.json.urll }}",
+            "Date": "={{ $now }}",
+            "Entity Name": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot']['Entity Name'] }}",
+            "Impacted": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot']['# Impacted'] }}",
+            "Information Compromised": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot']['Information Compromised'] }}",
+            "Company URL": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot']['Company URL'] }}",
+            "Date of Breach": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot']['Date of Breach'] }}",
+            "External Source Link": "={{ $('OpenAI').item.json.choices[0].message.content['Data Breach Snapshot']['External Source Link'] }}",
+            "Date Published": "={{ $('OpenAI').item.json.choices[0].message.content[\"Data Breach Snapshot\"][\"Date Published\"] }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date of Breach",
+              "displayName": "Date of Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date Published",
+              "displayName": "Date Published",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "External Source Link",
+              "displayName": "External Source Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        3120,
+        304
+      ],
+      "id": "d8b62464-3e8f-4dff-ad0f-9b51ed301c68",
+      "name": "Google Sheets1",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.textAsHtml }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "2e221f3d-f820-46f9-9dbc-d164f8fa1eef"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "html"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "06d8ef34-72cb-49f4-8917-a3b9e9fdb04d",
+                    "leftValue": "={{ $json.textAsHtml }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        976,
+        688
+      ],
+      "id": "b660d27e-66b5-4510-9986-34fd16fc4bcc",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "umavchi@zlk.com",
+        "subject": "genericLink",
+        "message": "=<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; color: #333; line-height: 1.6;\">\n\n    <h2>🔐 Data Breach Snapshot</h2>\n\n    <p><strong>Entity Name:</strong> {{ $json[\"Entity Name\"] }}</p>\n\n    <p><strong>Headquarters:</strong> {{ $json[\"Headquarters\"] }}</p>\n\n    <p><strong># Impacted:</strong> {{ $json[\"Impacted\"] }}</p>\n\n    <p><strong>Date of Breach:</strong> {{ $json[\"Date of Breach\"] }}</p>\n\n    <p><strong>Date Published:</strong> {{ $json[\"Date Published\"] }}</p>\n\n    <p><strong>Information Compromised:</strong><br>\n      {{ $json[\"Information Compromised\"] }}\n    </p>\n\n    <p><strong>Link to Where I Found Out About the Breach:</strong><br>\n      <a href=\"{{ $('Loop Over Items').item.json.urll }}\" target=\"_blank\">\n        {{ $('Loop Over Items').item.json.urll }}\n      </a>\n    </p>\n\n    <p><strong>External Source Link:</strong><br>\n      <a href=\"{{ $json[\"External Source Link\"] }}\" target=\"_blank\">\n        {{ $json[\"External Source Link\"] }}\n      </a>\n    </p>\n\n    <p><strong>Company URL:</strong><br>\n      <a href=\"{{ $json[\"Company URL\"] }}\" target=\"_blank\">\n        {{ $json[\"Company URL\"] }}\n      </a>\n    </p>\n\n  </body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3344,
+        544
+      ],
+      "id": "2a6acdf9-08a2-4bc6-a803-74d6bc1c44c1",
+      "name": "gmail3",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg",
+          "mode": "list",
+          "cachedResultName": "generic data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U2RDukKK2M6erGGqXCb5hfRiHRalUt-_f2YCPi9kuwg/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity Name",
+              "lookupValue": "={{ $json.choices[0].message.content['Data Breach Snapshot']['Entity Name'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2448,
+        448
+      ],
+      "id": "8ad2942d-d95b-4cd9-b491-a74704b1d865",
+      "name": "Google Sheets2",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0819223a-73fb-41b9-ab81-c81fd5981897",
+              "leftValue": "={{ $json.count_Entity_Name }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2896,
+        304
+      ],
+      "id": "13d71f5e-dc6c-4e68-bf05-766755d0dbba",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "Entity Name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        2672,
+        304
+      ],
+      "id": "2e58523a-109e-4008-8fa6-07f3254ad490",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        688
+      ],
+      "id": "e6c84771-13c5-4077-be74-6fff654f7492",
+      "name": "Split Out",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2672,
+        496
+      ],
+      "id": "7a0f0659-4940-422b-bdc4-31661b6f648e",
+      "name": "Wait10",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3344,
+        272
+      ],
+      "id": "61040fd9-24c5-4d9b-b7bd-f30f589e9571",
+      "name": "Wait11",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3568,
+        544
+      ],
+      "id": "5447b89c-3ab9-42f9-82ce-4094e8e0e806",
+      "name": "Wait13",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "content": "## extracting the urlrunnng http requet to extract the web page through jena ai",
+        "height": 480,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1280,
+        368
+      ],
+      "typeVersion": 1,
+      "id": "744655af-4096-4d0f-805a-7f7e597b96bd",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------------------------------\n// Get input HTML or text\n// ----------------------------------------------\nconst htmlContent = $input.first().json.textAsHtml\n    || $input.first().json.html\n    || $input.first().json.text\n    || \"\";\n\n// ----------------------------------------------\n// Extract URLs from anchor tags\n// ----------------------------------------------\nfunction extractUrlsFromHtml(html) {\n    const urls = [];\n    const anchorRegex = /<a[^>]+href=[\"'](https?:\\/\\/[^\"']+)[\"']/gi;\n    let match;\n\n    while ((match = anchorRegex.exec(html)) !== null) {\n        urls.push(match[1]);\n    }\n    return urls;\n}\n\n// ----------------------------------------------\n// Extract URLs from plain text\n// ----------------------------------------------\nfunction extractUrlsFromText(text) {\n    const urls = [];\n    const urlRegex = /https?:\\/\\/[^\\s\"'<>]+/g;\n    let match;\n\n    while ((match = urlRegex.exec(text)) !== null) {\n        urls.push(match[0]);\n    }\n    return urls;\n}\n\n// ----------------------------------------------\n// Decide extraction method\n// ----------------------------------------------\nlet urls = [];\n\nif (/<a[^>]+href=/i.test(htmlContent)) {\n    urls = extractUrlsFromHtml(htmlContent);\n} else {\n    urls = extractUrlsFromText(htmlContent);\n}\n\n// ----------------------------------------------\n// Deduplicate + format as required\n// ----------------------------------------------\nurls = [...new Set(urls)].map(url => ({ urll: url }));\n\n// Debug log\nconsole.log(\"Extracted URLs:\", urls);\n\n// ----------------------------------------------\n// Return final object structure\n// ----------------------------------------------\nreturn [\n    {\n        json: {\n            urls: urls\n        }\n    }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        688
+      ],
+      "id": "40d2849d-de11-4741-a4a2-ef97ac60ab7e",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "=from:meetings@zlk.com subject:(\"Daily General Web Scraping Links\") newer_than:3h  "
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        752,
+        688
+      ],
+      "id": "8354a825-397a-4d9f-b65a-0628b5742399",
+      "name": "Gmail",
+      "webhookId": "f833d33a-815f-4ea4-afc8-a0c8352fd262",
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        688
+      ],
+      "id": "c813e242-3cb8-4a1f-8a2b-5ff64751ad1b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        528,
+        48
+      ],
+      "id": "19aff01f-a25b-466a-b4b2-d89ea14599ce",
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gmail3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait10": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait11": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait13": {
+      "main": [
+        [
+          {
+            "node": "gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7d380dcc-9211-400e-b344-26d3b5b0c21e",
+  "meta": {
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "w2akipXyX3s2JdXo",
+  "tags": []
+}

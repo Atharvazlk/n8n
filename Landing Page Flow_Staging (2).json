@@ -1,0 +1,2246 @@
+{
+  "name": "Landing Page Flow_Staging",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://consumer.mydatabreachattorney.com/wp-json/api/v1/token",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"username\": \"staging-admin\",\n  \"password\": \"iNl7XuKfrBUPloMHGE2pTUm$\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        3296
+      ],
+      "id": "a975083b-1a22-4d3a-a9e8-16f8e697d5b9",
+      "name": "Get JWT token"
+    },
+    {
+      "parameters": {
+        "content": "## INPUT (HTTP POST body)\n```\n{\n  \"notice_link\": \"https://...\",   // или \"na\"\n  \"site_url\":    \"https://...\"\n}\n```",
+        "height": 240,
+        "width": 520,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        2976
+      ],
+      "id": "6d179d7f-8d33-4cd7-8f0e-bb53a6c99a5d",
+      "name": "Sticky 2a0f03"
+    },
+    {
+      "parameters": {
+        "content": "## AUTH (Step 1)\n`POST /wp-json/api/v1/token` с username/password\nиз env: `CONSUMER_WP_USERNAME` / `CONSUMER_WP_PASSWORD`.\nВозвращает `jwt_token`. Дальше во все запросы к WP\nидёт `Authorization: Bearer <jwt_token>`.\n\nСейчас username/password подтягиваются через `$env.*`.\n**Положи в .env файл n8n** перед запуском.",
+        "height": 320,
+        "width": 520,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        352,
+        2976
+      ],
+      "id": "655adf75-a149-41e3-a332-04e8721a7dfa",
+      "name": "Sticky 73fab5"
+    },
+    {
+      "parameters": {
+        "content": "## ROUTING\n1. notice_link есть? → ветка A\n2. notice — это .html? → Jina-скрейп\n3. Vermont AG? → отдельный путь (PDF из AG страницы)\n4. иначе → прямой fetch / Jina-альтернатива",
+        "height": 240,
+        "width": 900,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        2224
+      ],
+      "id": "7f8bb6cc-63ec-40db-8e33-75abc088bbc5",
+      "name": "Sticky 65b54a"
+    },
+    {
+      "parameters": {
+        "content": "## ВЕТКА A — \"Notice link\"\nИсточник — официальная нотификация.\n**Fetch → HTML→text → AI extract → WP create case** → Respond + (Sheet/Gmail в фоне).\nFreepik / image-upload убраны: новый WP API не принимает картинку.",
+        "height": 80,
+        "width": 2900,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        2512
+      ],
+      "id": "084ee8e2-5006-43f3-8804-9fbff2006437",
+      "name": "Sticky 8d38ea"
+    },
+    {
+      "parameters": {
+        "content": "## ВЕТКА B — \"Site URL\" (fallback)\nnotice_link == \"na\". Скрейпим сайт компании, AI извлекает что может, постим в WP.",
+        "height": 80,
+        "width": 2050,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        3792
+      ],
+      "id": "aca0aa31-8564-4db2-8be6-3c23921cd8dd",
+      "name": "Sticky 65b414"
+    },
+    {
+      "parameters": {
+        "content": "## CREATE DRAFT POST\n`POST /wp-json/wp/v2/data-breach` с Bearer JWT.\nСогласно doc — пост создаётся в **draft** автоматически\n(шаблон `template-privacy-violation.php`).\nОтвет: `{ status:200, message, post_id, preview_url }`.\n`preview_url` ведёт на превью драфта.",
+        "height": 260,
+        "width": 520,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        2304
+      ],
+      "id": "00ed0b97-6cd2-4ee5-968f-696296561da4",
+      "name": "Sticky e8eb99"
+    },
+    {
+      "parameters": {
+        "content": "## OUTPUT — async\nRespond срабатывает сразу после `WP create case`.\nSheet mark approved / Gmail работают в фоне.\n\nТело ответа:\n```\n{\n  \"success\": true,\n  \"post_id\": 12345,\n  \"preview_url\": \"https://consumer.../?post_type=data-breach&p=12345&preview=true\",\n  \"message\": \"...\",\n  \"source_branch\": \"notice\"|\"site\",\n  \"company_name\": \"...\",\n  \"campaign_name\": \"...\",\n  \"campaign_unique_id\": \"...\",\n  \"lead_type\": \"...\",\n  \"wp_response\": { ...полный ответ... }\n}\n```",
+        "height": 560,
+        "width": 720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3216,
+        2640
+      ],
+      "id": "87bd52e1-ebd9-486f-8c23-dbba334f6101",
+      "name": "Sticky 6f92e3"
+    },
+    {
+      "parameters": {
+        "content": "### Что было удалено\nИз ветки убраны Freepik (start/poll/wait/download) и upload-image —\nновый API `wp/v2/data-breach` не принимает картинку в body.\nЕсли позже понадобится featured image — добавь шаги:\n1) `POST /wp-json/wp/v2/media` (multipart) с тем же JWT,\n2) `POST /wp-json/wp/v2/data-breach/{id}` с `featured_media`.",
+        "height": 240,
+        "width": 520,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        3088
+      ],
+      "id": "0113df28-61c9-436c-9e7f-1335196e70ab",
+      "name": "Sticky a1a275"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "GPT-5.2"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=#role\n\nYou are a specialized GPT designed to extract structured legal data and generate a fully formatted data breach landing page, outputting it as plain text inside a JSON object.\n \n#responsibility\n\nGiven the input email body or structured text:\n\n{{ $json.text }}\n \nYour tasks:\n \n✅ 1️⃣ Extract ALL bracketed [ ... ] information from the text. If URLs are provided (e.g., company website, security update, AG report), extract any missing or supplementary details such as:\n\n- Company description\n\n- Industry type (from this list: Manufacturing, E-commerce, Education / EdTech, IT / Cybersecurity, Finance, Legal, Healthcare)\n\n- System affected\n\n- Scope of breach\n \nDraft the entire landing page using this exact format:\n \n📄 STRUCTURE:\n \n2. **Intro Paragraph:**\n\nIf you recently received a letter or an email from [Company Name] informing you that your sensitive personal (and protected health only if medical/health information is compromised) information was compromised in a data breach, we would like to speak with you about your rights and potential legal remedies. [Company Name] recently disclosed that it was the victim of a data breach that exposed individuals’ sensitive personal (and protected health only if medical/health information is compromised) information.\n \n3. **What Happened?** (bold and underlined)\n\nSummarize the timeline and incident. Include:\n\n- Date of incident\n\n- When company became aware\n\n- Whether third-party investigators were hired\n\n- Scope of breach\n\n- When impacted individuals were notified\n\n- Whether AG or other government filings were made & when it was made (date)\n \n4. **What Information Was Impacted?** (bold and underlined)\n\nList the types of data in bullet points. Always include \"sensitive personal and protected health information\" when relevant.\n\n\n \n5. **About [Company Name]** (bold and underlined)\n\n[Company Name], headquartered in [City, State], is a [Industry Type] that specializes in [short business description].\n \n \n6. **F/U Questions** (bold and underlined)\n\nContinue exactly with:\n \n2. Are you a [client, employee, patient] of [Company Name]? (This is the lead type value)\n\n• Yes\n\n• No\n \n \n3. Since [Earliest Date of Incident], have you experienced any unusual activity? (this date here will be the since date)\n\n• Yes (If yes, prompt open field: \"Please describe in detail the unusual activity you’ve experienced.\")\n\n• No\n \n \nINSTRUCTIONS:\n\n- Ensure legal clarity and accuracy\n\n- Maintain a formal, professional tone\n \n- Do not fabricate data — use only what’s inferred from all of the input and the above draft.\n \nThe above information **must be returned in this structured JSON**:\n \n```json\n\n{\n\n  \"Company_name\": \"Company Name\",\n\n  \"What_is_this_about\": \"If you recently received a letter or an email from [Company Name] informing you that your sensitive personal (and protected health if health data is exposed) information was compromised in a data breach, we would like to speak with you about your rights and potential legal remedies. [Company Name] recently disclosed that it was the victim of a data breach that exposed individuals’ sensitive personal (and protected health if applicable) information.\",\n\n  \"What Happened?\": \"On [earliestDate of Incident], [Company Name] became aware of a security incident on its [System Affected]. Upon detection, [Company Name] launched an investigation with the assistance of third-party cyber security experts to determine the nature and scope of the incident. The investigation determined that an unauthorized third party gained access to [describe the entire scope of breach]. [Company Name] conducted a comprehensive review of the impacted data to determine what information was compromised and identified affected individuals. On [Date Identified], [Company Name] identified persons whose sensitive data was included in the impacted data. On [Date of Public Disclosure], [Company Name] filed a notice with the [Government Entity] or made a public disclosure and started sending out notice letters to the impacted individuals.\",\n\n  \"What Information Was Impacted\": \"Upon information and belief, the following types of sensitive personal (and protected health information if applicable) may have been compromised:\",\n  \"What Information Was Impacted Array\": \"[\"Data Type 1\",\"Data Type 2\",\"Data Type 3\",\"Data Type 4\"]\",\n\n  \"About_Company\": \"[Company Name], headquartered in [Location], is a [Industry Type] that specializes in [Brief Business Description].\",\n\n  \"Industry\":\"take type of company from these parameter  only: Manufacturing, E-commerce,Education / EdTech,IT / Cybersecurity,Finance,Legal,Healthcare\"\n\n\"since_date\": \"The earliest date since the incident occured\",\n\n  \"campaign_name\": \"Company name\",\n \n  \"lead_type\": \"who got impacted? ( Customer, patient, client etc)\",\n \n \n}",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2240,
+        2592
+      ],
+      "id": "722283d3-37fc-4524-9e48-52a56f1de132",
+      "name": "Notice: AI extract landing data1",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://consumer.mydatabreachattorney.com/wp-json/wp/v2/data-breach",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get JWT token').item.json.jwt_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({\n  company_name:                        $('Notice: parse landing data1').item.json.company_name,\n  short_description:                   $('Notice: parse landing data1').item.json.what_is_this_about,\n  date_of_breach:                      $('Notice: parse landing data1').item.json.since_date,\n  institution_type:                    $('Notice: parse landing data1').item.json.industry || 'Law Firm',\n  number_impacted:                     'Unknown',\n  what_is_this_about:                  $('Notice: parse landing data1').item.json.what_is_this_about,\n  what_happened:                       $('Notice: parse landing data1').item.json.what_happened,\n  what_information_was_impacted:       $('Notice: parse landing data1').item.json.what_information_was_impacted,\n  what_information_was_impacted_array: ($('Notice: parse landing data1').item.json.what_information_was_impacted_array || '').toString().split(/,\\s*/).filter(Boolean),\n  about_company:                       $('Notice: parse landing data1').item.json.about_company,\n  notice_link:                         $('1. Normalize input1').item.json.notice_link,\n  lead_type:                           $('Notice: parse landing data1').item.json.lead_type,\n  since_date:                          $('Notice: parse landing data1').item.json.since_date,\n  campaign_name:                       ($('Notice: parse landing data1').item.json.company_name || '').replace(/[^a-zA-Z0-9 ]/g,''),\n  campaign_unique_id:                  ($('Notice: parse landing data1').item.json.company_name || '').replace(/[^a-zA-Z0-9 ]/g,'').replace(/\\s+/g,'_')\n}) }}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2752,
+        2592
+      ],
+      "id": "44410978-fc36-4897-b519-02f45f74385c",
+      "name": "Notice: WP create case1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.choices?.[0]?.message?.content;\n\nfunction safeMatch(regex, str) {\n  const result = str ? str.match(regex) : null;\n  return result ? result[1] : \"Not specified\";\n}\n\nif (!data) {\n  return [{ json: { error: \"No data found\" } }];\n}\n\n// Extract fields using regex\nconst companyName           = safeMatch(/\"Company_name\":\\s*\"([^\"]+)\"/i, data);\nconst about                 = safeMatch(/\"What_is_this_about\":\\s*\"([^\"]+)\"/i, data);\nconst incidentDetails       = safeMatch(/\"What Happened\\?\":\\s*\"([^\"]+)\"/i, data);\nconst impactedInfo          = safeMatch(/\"What Information Was Impacted\":\\s*\"([^\"\\n]+)\"/i, data);\nconst impactedInfoArray         = safeMatch(/\"What Information Was Impacted Array\"\\s*:\\s*\\[([^\\]]+)\\]/i, data);\nconst companyDescription    = safeMatch(/\"About_Company\":\\s*\"([^\"]+)\"/i, data);\nconst industry              = safeMatch(/\"Industry\":\\s*\"([^\"]+)\"/i, data);\nconst sinceDate             = safeMatch(/\"since_date\":\\s*\"([^\"]+)\"/i, data);\nconst campaignName          = safeMatch(/\"campaign_name\":\\s*\"([^\"]+)\"/i, data);\nconst leadType              = safeMatch(/\"lead_type\":\\s*\"([^\"]+)\"/i, data);\n\n// Structure output\nconst scrapedData = {\n  company_name: companyName,\n  what_is_this_about: about,\n  what_happened: incidentDetails,\n  what_information_was_impacted: impactedInfo,\n  what_information_was_impacted_array: impactedInfoArray,\n  about_company: companyDescription,\n  industry: industry,\n  since_date: sinceDate,\n  campaign_name: campaignName,\n  lead_type: leadType\n};\n\nreturn [{ json: scrapedData }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        2592
+      ],
+      "id": "1ebe57d4-e955-483e-ad3b-6817e54df7a5",
+      "name": "Notice: parse landing data1"
+    },
+    {
+      "parameters": {
+        "sendTo": "umavchi@zlk.com,ssuddala@zlk.com,gsomani@zlk.com",
+        "subject": "={{ $('Notice: parse landing data1').item.json.company_name }}\n- landing page",
+        "emailType": "text",
+        "message": "={{ $('Notice: parse landing data1').item.json.company_name }}\n \nCampaign_name: {{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '') }}\nCampaign_unique_id: {{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_') }}\nLanding page Link: {{ $('Notice: WP create case1').item.json.preview_url }}\n",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "={{ $('Notice: build attachment fields1').item.json.campaign_name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3792,
+        2304
+      ],
+      "id": "3f2c50d0-ec13-4686-8f10-9055be431e20",
+      "name": "Notice: notify by email1",
+      "webhookId": "37e2d78c-4b4f-4b03-895c-7c613b4b8615",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2h2nQyfM6cUHvuEp",
+          "name": "Gmail account_teammarketing"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Approved": "Yes",
+            "Entity Name": "={{ $('Notice: parse landing data1').item.json.company_name }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Public Disclosure Date",
+              "displayName": "Public Disclosure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link to Public Disclosure (AG site/official source)",
+              "displayName": "Link to Public Disclosure (AG site/official source)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Date Notice Letters Went Out",
+              "displayName": "Date Notice Letters Went Out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "notice link",
+              "displayName": "notice link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_type",
+              "displayName": "company_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headquarter_location",
+              "displayName": "headquarter_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Approved",
+              "displayName": "Approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        3024,
+        2592
+      ],
+      "id": "4ddb89f0-0c8a-4e41-bce9-d3a8f7d9f622",
+      "name": "Notice: Sheet mark approved1",
+      "retryOnFail": true,
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('1. Normalize input1').item.json.notice_link }}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        2256
+      ],
+      "id": "c49f2f19-46f4-438c-a85b-d2989ea1221e",
+      "name": "Notice: fetch raw1",
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "85a73ef3-2e12-4c9c-b6ce-ea303e9ed229",
+              "leftValue": "={{ $('1. Normalize input1').item.json.notice_link }}",
+              "rightValue": "=.html",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        2784
+      ],
+      "id": "2ede65ed-1453-44b9-ad2d-bf3f58d8f697",
+      "name": "Route: notice is .html?1",
+      "executeOnce": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('1. Normalize input1').item.json.site_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        3888
+      ],
+      "id": "9babd38d-7129-46e7-94f1-e873b150d476",
+      "name": "Site: fetch via Jina1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "GPT-5.2"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=#role\n\nYou are a specialized GPT designed to extract structured legal data and generate a fully formatted data breach landing page, outputting it as plain text inside a JSON object.\n \n#responsibility\n\nGiven the input email body or structured text:\n\n{{ JSON.stringify($('1. Normalize input1').item.json.breach) }}\nYour tasks:\n \n✅ 1️⃣ Extract ALL bracketed [ ... ] information from the text. If URLs are provided (e.g., company website, security update, AG report), extract any missing or supplementary details such as:\n\n- Company description\n\n- Industry type (from this list: Manufacturing, E-commerce, Education / EdTech, IT / Cybersecurity, Finance, Legal, Healthcare)\n\n- System affected\n\n- Scope of breach\n \nDraft the entire landing page using this exact format:\n \n📄 STRUCTURE:\n \n2. **Intro Paragraph:**\n\nIf you recently received a letter or an email from [Company Name] informing you that your sensitive personal (and protected health only if medical/health information is compromised) information was compromised in a data breach, we would like to speak with you about your rights and potential legal remedies. [Company Name] recently disclosed that it was the victim of a data breach that exposed individuals’ sensitive personal (and protected health only if medical/health information is compromised) information.\n \n3. **What Happened?** (bold and underlined)\n\nSummarize the timeline and incident. Include:\n\n- Date of incident\n\n- When company became aware\n\n- Whether third-party investigators were hired\n\n- Scope of breach\n\n- When impacted individuals were notified\n\n- Whether AG or other government filings were made & when it was made (date)\n \n4. **What Information Was Impacted?** (bold and underlined)\n\nList the types of data in bullet points. Always include \"sensitive personal and protected health information\" when relevant.\n\n\n \n5. **About [Company Name]** (bold and underlined)\n\n[Company Name], headquartered in [City, State], is a [Industry Type] that specializes in [short business description].\n \n \n6. **F/U Questions** (bold and underlined)\n\nContinue exactly with:\n \n2. Are you a [client, employee, patient] of [Company Name]? (This is the lead type value)\n\n• Yes\n\n• No\n \n \n3. Since [Earliest Date of Incident], have you experienced any unusual activity? (this date here will be the since date)\n\n• Yes (If yes, prompt open field: \"Please describe in detail the unusual activity you’ve experienced.\")\n\n• No\n \n \nINSTRUCTIONS:\n\n- Ensure legal clarity and accuracy\n\n- Maintain a formal, professional tone\n \n- Do not fabricate data — use only what’s inferred from all of the input and the above draft.\n \nThe above information **must be returned in this structured JSON**:\n \n```json\n\n{\n\n  \"Company_name\": \"Company Name\",\n\n  \"What_is_this_about\": \"If you recently received a letter or an email from [Company Name] informing you that your sensitive personal (and protected health if health data is exposed) information was compromised in a data breach, we would like to speak with you about your rights and potential legal remedies. [Company Name] recently disclosed that it was the victim of a data breach that exposed individuals’ sensitive personal (and protected health if applicable) information.\",\n\n  \"What Happened?\": \"On [earliestDate of Incident], [Company Name] became aware of a security incident on its [System Affected]. Upon detection, [Company Name] launched an investigation with the assistance of third-party cyber security experts to determine the nature and scope of the incident. The investigation determined that an unauthorized third party gained access to [describe the entire scope of breach]. [Company Name] conducted a comprehensive review of the impacted data to determine what information was compromised and identified affected individuals. On [Date Identified], [Company Name] identified persons whose sensitive data was included in the impacted data. On [Date of Public Disclosure], [Company Name] filed a notice with the [Government Entity] or made a public disclosure and started sending out notice letters to the impacted individuals.\",\n\n  \"What Information Was Impacted\": \"Upon information and belief, the following types of sensitive personal (and protected health information if applicable) may have been compromised:\",\n  \"What Information Was Impacted Array\": \"[\"Data Type 1\",\"Data Type 2\",\"Data Type 3\",\"Data Type 4\"]\",\n\n  \"About_Company\": \"[Company Name], headquartered in [Location], is a [Industry Type] that specializes in [Brief Business Description].\",\n\n  \"Industry\":\"take type of company from these parameter  only: Manufacturing, E-commerce,Education / EdTech,IT / Cybersecurity,Finance,Legal,Healthcare\"\n\n\"since_date\": \"The earliest date since the incident occured\",\n\n  \"campaign_name\": \"Company name\",\n \n  \"lead_type\": \"who got impacted? ( Customer, patient, client etc)\",\n \n \n}\n ",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        912,
+        3888
+      ],
+      "id": "04dafb59-3d9c-4b50-9b18-a47c88aefd0b",
+      "name": "Site: AI extract landing data1",
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://consumer.mydatabreachattorney.com/wp-json/wp/v2/data-breach",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get JWT token').item.json.jwt_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({\n  company_name:                        $('Site: parse landing data1').item.json.company_name,\n  short_description:                   $('Site: parse landing data1').item.json.what_is_this_about,\n  date_of_breach:                      $('Site: parse landing data1').item.json.since_date,\n  institution_type:                    $('Site: parse landing data1').item.json.industry || 'Law Firm',\n  number_impacted:                     'Unknown',\n  what_is_this_about:                  $('Site: parse landing data1').item.json.what_is_this_about,\n  what_happened:                       $('Site: parse landing data1').item.json.what_happened,\n  what_information_was_impacted:       $('Site: parse landing data1').item.json.what_information_was_impacted,\n  what_information_was_impacted_array: ($('Site: parse landing data1').item.json.what_information_was_impacted_array || '').toString().split(/,\\s*/).filter(Boolean),\n  about_company:                       $('Site: parse landing data1').item.json.about_company,\n  notice_link:                         $('1. Normalize input1').item.json.notice_link,\n  lead_type:                           $('Site: parse landing data1').item.json.lead_type,\n  since_date:                          $('Site: parse landing data1').item.json.since_date,\n  campaign_name:                       ($('Site: parse landing data1').item.json.company_name || '').replace(/[^a-zA-Z0-9 ]/g,''),\n  campaign_unique_id:                  ($('Site: parse landing data1').item.json.company_name || '').replace(/[^a-zA-Z0-9 ]/g,'').replace(/\\s+/g,'_')\n}) }}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1456,
+        3888
+      ],
+      "id": "9de09c88-516a-4aad-bef8-8e59c2079c7e",
+      "name": "Site: WP create case1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.choices?.[0]?.message?.content;\n\nfunction safeMatch(regex, str) {\n  const result = str ? str.match(regex) : null;\n  return result ? result[1] : \"Not specified\";\n}\n\nif (!data) {\n  return [{ json: { error: \"No data found\" } }];\n}\n\n// Extract fields using regex\nconst companyName           = safeMatch(/\"Company_name\":\\s*\"([^\"]+)\"/i, data);\nconst about                 = safeMatch(/\"What_is_this_about\":\\s*\"([^\"]+)\"/i, data);\nconst incidentDetails       = safeMatch(/\"What Happened\\?\":\\s*\"([^\"]+)\"/i, data);\nconst impactedInfo          = safeMatch(/\"What Information Was Impacted\":\\s*\"([^\"\\n]+)\"/i, data);\nconst impactedInfoArray         = safeMatch(/\"What Information Was Impacted Array\"\\s*:\\s*\\[([^\\]]+)\\]/i, data);\nconst companyDescription    = safeMatch(/\"About_Company\":\\s*\"([^\"]+)\"/i, data);\nconst industry              = safeMatch(/\"Industry\":\\s*\"([^\"]+)\"/i, data);\nconst sinceDate             = safeMatch(/\"since_date\":\\s*\"([^\"]+)\"/i, data);\nconst campaignName          = safeMatch(/\"campaign_name\":\\s*\"([^\"]+)\"/i, data);\nconst leadType              = safeMatch(/\"lead_type\":\\s*\"([^\"]+)\"/i, data);\n\n// Structure output\nconst scrapedData = {\n  company_name: companyName,\n  what_is_this_about: about,\n  what_happened: incidentDetails,\n  what_information_was_impacted: impactedInfo,\n  what_information_was_impacted_array: impactedInfoArray,\n  about_company: companyDescription,\n  industry: industry,\n  since_date: sinceDate,\n  campaign_name: campaignName,\n  lead_type: leadType\n};\n\nreturn [{ json: scrapedData }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        3888
+      ],
+      "id": "db3da29d-94a2-4683-9c4c-cd97428b10b5",
+      "name": "Site: parse landing data1"
+    },
+    {
+      "parameters": {
+        "sendTo": "umavchi@zlk.com,ssuddala@zlk.com,gsomani@zlk.com",
+        "subject": "={{ $('Site: parse landing data1').item.json.company_name }}\n- landing page",
+        "emailType": "text",
+        "message": "={{ $('Site: parse landing data1').item.json.company_name }}\n\nCampaign_name: {{ $('Site: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '') }}\nCampaign_unique_id: {{ $('Site: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_') }}\nLanding page Link: {{ $('Site: WP create case1').item.json.preview_url }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "={{ $('Site: build attachment fields1').item.json.campaign_name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2688,
+        4208
+      ],
+      "id": "f580dd31-c941-440f-afcf-286c2ea1ac2c",
+      "name": "Site: notify by email1",
+      "webhookId": "ecea8b70-5ee9-4329-a623-4be246e31efb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g",
+          "mode": "list",
+          "cachedResultName": "DataBreachSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vI_GB-Hoq8-Iyrev4h-3QJYmqRa18B0EJARp8pltu1g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Approved": "Yes",
+            "Entity Name": "={{ $('Site: parse landing data1').item.json.company_name }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "site url",
+              "displayName": "site url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Headquarters",
+              "displayName": "Headquarters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Impacted",
+              "displayName": "Impacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Public Disclosure Date",
+              "displayName": "Public Disclosure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Information Compromised",
+              "displayName": "Information Compromised",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link to Where I Found Out About the Breach",
+              "displayName": "Link to Where I Found Out About the Breach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link to Public Disclosure (AG site/official source)",
+              "displayName": "Link to Public Disclosure (AG site/official source)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Date Notice Letters Went Out",
+              "displayName": "Date Notice Letters Went Out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "notice link",
+              "displayName": "notice link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_type",
+              "displayName": "company_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "employee_number",
+              "displayName": "employee_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headquarter_location",
+              "displayName": "headquarter_location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "annual_revenue",
+              "displayName": "annual_revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Duplicate",
+              "displayName": "Duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Approved",
+              "displayName": "Approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1920,
+        3888
+      ],
+      "id": "831d6b5f-289d-4bf4-83fe-75ce036e9c42",
+      "name": "Site: Sheet mark approved1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3ba49247-9b38-4db2-973a-c4e45e4e068c",
+              "leftValue": "={{ $('1. Normalize input1').item.json.notice_link }}",
+              "rightValue": "ago.vermont.gov/",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        2624
+      ],
+      "id": "1ce5596d-42ad-4b2a-9b53-0b4c52566b9d",
+      "name": "Route: Vermont AG?1"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('1. Normalize input1').item.json.notice_link }}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        2784
+      ],
+      "id": "8f2e7c45-d8ec-402b-8e6e-9b352352cb80",
+      "name": "Notice: fetch Vermont AG page1",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=extract the link under \"file:\" in this data {{ $json.data }} and put that in output \n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1456,
+        2784
+      ],
+      "id": "8044b0de-973b-4996-aeef-18502fbfc5aa",
+      "name": "Notice: AI find file URL (Vermont)1",
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1712,
+        2784
+      ],
+      "id": "d03d967d-9f94-4559-9b86-b71fa9dc5342",
+      "name": "Notice: fetch Vermont file1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "77613b8c-24a7-4280-b62d-32a2d16ba210",
+              "leftValue": "={{ $('1. Normalize input1').item.json.notice_link }}",
+              "rightValue": "na",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        3296
+      ],
+      "id": "a0fc0deb-36de-47be-8962-8a2c621ef21c",
+      "name": "Route: notice_link present?1"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        3696
+      ],
+      "id": "dcccce58-bc18-46a3-8be9-5954214bf73a",
+      "name": "Site: retry sheet (delay)1",
+      "webhookId": "f2e9d9df-644b-486a-b484-f0d620806111"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3024,
+        2384
+      ],
+      "id": "0742876f-bcb0-4de0-a1db-4359de4349b7",
+      "name": "Notice: retry sheet (delay)1",
+      "webhookId": "91c05675-eb03-4403-8897-f751e4630b85"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc741fa1-a218-41a5-aaa9-99e39e2a9c95",
+              "name": "company_name",
+              "value": "={{ $('Site: parse landing data1').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "7842ca6c-5986-4995-9d93-7625589aa208",
+              "name": "what_is_this_about",
+              "value": "={{ $('Site: parse landing data1').item.json.what_is_this_about }}",
+              "type": "string"
+            },
+            {
+              "id": "0002e59a-4e2d-47c9-b3f6-0ed39bad434b",
+              "name": "what_happened",
+              "value": "={{ $('Site: parse landing data1').item.json.what_happened }}",
+              "type": "string"
+            },
+            {
+              "id": "4ba72faf-dcbc-4e7c-86df-e02ec7a55043",
+              "name": "what_information_was_impacted",
+              "value": "={{ $('Site: parse landing data1').item.json.what_information_was_impacted }}",
+              "type": "string"
+            },
+            {
+              "id": "efec92a5-c47e-4118-b5b9-3e974c12183b",
+              "name": "what_information_was_impacted_array",
+              "value": "={{ $('Site: parse landing data1').item.json.what_information_was_impacted_array }}",
+              "type": "string"
+            },
+            {
+              "id": "ace5d0b4-ca8d-4547-bb7b-c19c01b68391",
+              "name": "about_company",
+              "value": "={{ $('Site: parse landing data1').item.json.about_company }}",
+              "type": "string"
+            },
+            {
+              "id": "b1baf1f5-8003-40f6-b12d-32a88929605d",
+              "name": "since_date",
+              "value": "={{ $('Site: parse landing data1').item.json.since_date }}",
+              "type": "string"
+            },
+            {
+              "id": "ae1765af-fd3d-470e-b422-28d1e1b2e6e3",
+              "name": "lead_type",
+              "value": "={{ $('Site: parse landing data1').item.json.lead_type }}",
+              "type": "string"
+            },
+            {
+              "id": "e7d64e40-c8d6-4d20-a207-1a5438dc7347",
+              "name": "campaign_unique_id",
+              "value": "={{ $('Site: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_') }}",
+              "type": "string"
+            },
+            {
+              "id": "35c8ce78-1aaa-498d-9e81-20a0f9dccef2",
+              "name": "campaign_name",
+              "value": "={{ $('Site: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2192,
+        3984
+      ],
+      "id": "53b23921-448a-4477-b003-6dd4a820a59b",
+      "name": "Site: build attachment fields1"
+    },
+    {
+      "parameters": {
+        "operation": "rtf",
+        "binaryPropertyName": "={{ $json.campaign_name }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2448,
+        3984
+      ],
+      "id": "f2fcda25-8cfe-43e1-a190-69fdff164aac",
+      "name": "Site: build TXT attachment1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc741fa1-a218-41a5-aaa9-99e39e2a9c95",
+              "name": "company_name",
+              "value": "={{ $('Notice: parse landing data1').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "7842ca6c-5986-4995-9d93-7625589aa208",
+              "name": "what_is_this_about",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_is_this_about }}",
+              "type": "string"
+            },
+            {
+              "id": "0002e59a-4e2d-47c9-b3f6-0ed39bad434b",
+              "name": "what_happened",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_happened }}",
+              "type": "string"
+            },
+            {
+              "id": "4ba72faf-dcbc-4e7c-86df-e02ec7a55043",
+              "name": "what_information_was_impacted",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_information_was_impacted }}",
+              "type": "string"
+            },
+            {
+              "id": "efec92a5-c47e-4118-b5b9-3e974c12183b",
+              "name": "what_information_was_impacted_array",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_information_was_impacted_array }}",
+              "type": "string"
+            },
+            {
+              "id": "ace5d0b4-ca8d-4547-bb7b-c19c01b68391",
+              "name": "about_company",
+              "value": "={{ $('Notice: parse landing data1').item.json.about_company }}",
+              "type": "string"
+            },
+            {
+              "id": "b1baf1f5-8003-40f6-b12d-32a88929605d",
+              "name": "since_date",
+              "value": "={{ $('Notice: parse landing data1').item.json.since_date }}",
+              "type": "string"
+            },
+            {
+              "id": "ae1765af-fd3d-470e-b422-28d1e1b2e6e3",
+              "name": "lead_type",
+              "value": "={{ $('Notice: parse landing data1').item.json.lead_type }}",
+              "type": "string"
+            },
+            {
+              "id": "e7d64e40-c8d6-4d20-a207-1a5438dc7347",
+              "name": "campaign_unique_id",
+              "value": "={{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_') }}",
+              "type": "string"
+            },
+            {
+              "id": "35c8ce78-1aaa-498d-9e81-20a0f9dccef2",
+              "name": "campaign_name",
+              "value": "={{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3280,
+        2688
+      ],
+      "id": "05326322-65d7-455a-9838-4718eb2fd431",
+      "name": "Notice: build attachment fields1"
+    },
+    {
+      "parameters": {
+        "operation": "rtf",
+        "binaryPropertyName": "={{ $json.campaign_name }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3536,
+        2688
+      ],
+      "id": "eb7bbfff-efa3-485e-a8e6-c39f04ab9ea1",
+      "name": "Notice: build TXT attachment1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3e6896e2-ef34-4abf-a3da-f7d9176ce6f9",
+              "leftValue": "={{ $('1. Normalize input1').item.json.notice_link }}",
+              "rightValue": ".pdf",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        2496
+      ],
+      "id": "3eec6409-aab5-4e4c-beaa-a3336d7f3af0",
+      "name": "Route: direct fetch?1"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('1. Normalize input1').item.json.notice_link }}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1696,
+        2592
+      ],
+      "id": "e684224e-7423-42e2-ba77-2e5b6eb8f684",
+      "name": "Notice: fetch via Jina (alt)1",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('1. Normalize input1').item.json.site_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        3008
+      ],
+      "id": "0bb9a432-3875-4828-9524-72c309bdd8ba",
+      "name": "Notice: fetch via Jina (HTML)1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: put your HTML string in $json.html (or adjust the key below)\nconst html = $input.first().json.data || '';\n\nfunction htmlToText(input) {\n  if (!input) return '';\n\n  // 1) Remove script/style\n  let s = input\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, '')\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, '');\n\n  // 2) Preserve meaningful breaks before stripping tags\n  //    - <a> => \"text (url)\"\n  s = s.replace(/<a [^>]*href=\"([^\"]+)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, (m, url, text) => {\n    // strip tags inside anchor text just in case\n    const t = text.replace(/<\\/?[^>]+>/g, '').trim();\n    return t ? `${t} (${url})` : url;\n  });\n\n  //    - List bullets\n  s = s.replace(/<li[^>]*>/gi, '• ');\n\n  //    - Table cells and block ends -> separators\n  s = s.replace(/<\\/t[hd]>/gi, '\\t')\n       .replace(/<(br|\\/p|\\/div|\\/li|\\/h[1-6]|\\/tr)>/gi, '\\n');\n\n  // 3) Strip the rest of the tags\n  s = s.replace(/<\\/?[^>]+>/g, '');\n\n  // 4) Decode common HTML entities (basic, no external libs)\n  s = s\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    // hex &#xHH;\n    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))\n    // decimal &#DDD;\n    .replace(/&#(\\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)));\n\n  // 5) Tidy whitespace\n  s = s\n    .replace(/\\r/g, '')\n    .replace(/[ \\t]{2,}/g, ' ')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n\n  return s;\n}\n\nreturn [{ ...$json, text: htmlToText(html) }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        2592
+      ],
+      "id": "c1176d0b-7d0d-4e0e-9cdf-181c9dd33659",
+      "name": "Notice: HTML → text1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "landingpage_staging",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        3296
+      ],
+      "id": "e3fcb228-cff9-4ddb-9cb9-71ff37177d5a",
+      "name": "Webhook (POST landing-page)1",
+      "webhookId": "cc8708f3-189e-4871-ad17-1e160f1a8d57"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f21bbda9-1e19-4d00-9f3e-795f1e26de75",
+              "name": "notice_link",
+              "value": "={{ (() => {\n  let raw = $json.body?.notice_link ?? $json.notice_link ?? 'na';\n  if (raw == null) return 'na';\n  if (Array.isArray(raw)) raw = raw[0] || 'na';\n  raw = String(raw).trim();\n  if (!raw || raw === 'na') return 'na';\n  const stripped = raw.replace(/^[\\{\\[]+|[\\}\\]]+$/g, '');\n  const parts = stripped.split(/[,;\\s]+/).map(s => s.trim()).filter(Boolean);\n  const urls = parts.filter(s => /^https?:\\/\\//i.test(s));\n  if (!urls.length) return 'na';\n  const gov = urls.find(u => /\\.gov(\\b|\\/|:)/i.test(u));\n  return gov || urls[0];\n})() }}",
+              "type": "string"
+            },
+            {
+              "id": "4cc717f8-dc89-4cb4-b1be-3ab279b1aa46",
+              "name": "site_url",
+              "value": "={{ (() => {\n  let raw = $json.body?.site_url ?? $json.site_url ?? '';\n  if (raw == null) return '';\n  if (Array.isArray(raw)) raw = raw[0] || '';\n  raw = String(raw).trim();\n  if (!raw) return '';\n  const stripped = raw.replace(/^[\\{\\[]+|[\\}\\]]+$/g, '');\n  const parts = stripped.split(/[,;\\s]+/).map(s => s.trim()).filter(Boolean);\n  const urls = parts.filter(s => /^https?:\\/\\//i.test(s));\n  if (!urls.length) return '';\n  return urls[0];\n})() }}",
+              "type": "string"
+            },
+            {
+              "id": "9bb43978-692b-4ae3-bc6a-49b5f94b634b",
+              "name": "breach",
+              "value": "={{ $json.body?.breach ?? $json.breach ?? null }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        3296
+      ],
+      "id": "2b3438e2-2e18-41de-9cd4-0792e8a1e32f",
+      "name": "1. Normalize input1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3648,
+        3184
+      ],
+      "id": "671aef79-f85e-4c14-a205-3c90220af7ec",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('1. Normalize input1').item.json.notice_link }}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        2304
+      ],
+      "id": "957b3207-ca72-4bea-8c30-60c3c3e00898",
+      "name": "Notice: fetch raw (fallback Jina)",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3882866e-8ce1-4992-8637-60a77946c1a8",
+              "name": "company_name",
+              "value": "={{ $('Site: parse landing data1').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "4e1adc09-2f0b-4529-bfe4-85a377a48f97",
+              "name": "what_is_this_about",
+              "value": "={{ $('Site: parse landing data1').item.json.what_is_this_about }}",
+              "type": "string"
+            },
+            {
+              "id": "28b585cc-d4e6-4a00-97ad-1af62ea60e8f",
+              "name": "what_happened",
+              "value": "={{ $('Site: parse landing data1').item.json.what_happened }}",
+              "type": "string"
+            },
+            {
+              "id": "a602fee5-e46d-4efe-a650-40f3579f1118",
+              "name": "what_information_was_impacted",
+              "value": "={{ $('Site: parse landing data1').item.json.what_information_was_impacted }}",
+              "type": "string"
+            },
+            {
+              "id": "5190b735-4ab0-467b-b8af-291fb561ef2b",
+              "name": "what_information_was_impacted_array",
+              "value": "={{ $('Site: parse landing data1').item.json.what_information_was_impacted_array }}",
+              "type": "string"
+            },
+            {
+              "id": "47bfd080-694b-4a72-8924-34c6e7d378ea",
+              "name": "about_company",
+              "value": "={{ $('Site: parse landing data1').item.json.about_company }}",
+              "type": "string"
+            },
+            {
+              "id": "2719d103-c016-4ecb-8fea-808a6c677948",
+              "name": "industry",
+              "value": "={{ $('Site: parse landing data1').item.json.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "3a24423d-eb79-4828-8135-dbc25ca2b6e3",
+              "name": "since_date",
+              "value": "={{ $('Site: parse landing data1').item.json.since_date }}",
+              "type": "string"
+            },
+            {
+              "id": "0fc0046a-a54e-48da-bd95-c578d5c7cccf",
+              "name": "campaign_name",
+              "value": "={{ $('Site: parse landing data1').item.json.campaign_name }}",
+              "type": "string"
+            },
+            {
+              "id": "b9fa2915-bb64-4a33-82df-4d2539f5eb01",
+              "name": "lead_type",
+              "value": "={{ $('Site: parse landing data1').item.json.lead_type }}",
+              "type": "string"
+            },
+            {
+              "id": "262efa04-cdc2-47a6-9397-a70f4fd612b5",
+              "name": "preview_url",
+              "value": "={{ $json.preview_url }}",
+              "type": "string"
+            },
+            {
+              "id": "0dd0509f-ed4d-4d93-b593-be30940f9b97",
+              "name": "post_id",
+              "value": "={{ $json.post_id }}",
+              "type": "number"
+            },
+            {
+              "id": "81ac54da-b280-4e5e-953c-a3abc6aba5aa",
+              "name": "message",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2064,
+        3472
+      ],
+      "id": "96ccb1f0-79bb-4ef6-9e5f-98a1fca0655c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "262efa04-cdc2-47a6-9397-a70f4fd612b5",
+              "name": "preview_url",
+              "value": "={{ $json.preview_url }}",
+              "type": "string"
+            },
+            {
+              "id": "0dd0509f-ed4d-4d93-b593-be30940f9b97",
+              "name": "post_id",
+              "value": "={{ $json.post_id }}",
+              "type": "number"
+            },
+            {
+              "id": "81ac54da-b280-4e5e-953c-a3abc6aba5aa",
+              "name": "message",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "bfda6bbd-a848-4d49-a820-af731d3399c6",
+              "name": "company_name",
+              "value": "={{ $('Notice: parse landing data1').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "866a5c73-b4c0-4064-a3a3-a0d355a53d7a",
+              "name": "what_is_this_about",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_is_this_about }}",
+              "type": "string"
+            },
+            {
+              "id": "21be9972-50e6-4401-9988-865b95df13a9",
+              "name": "what_happened",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_happened }}",
+              "type": "string"
+            },
+            {
+              "id": "caabba05-8aee-446c-b92e-d18844cee9c2",
+              "name": "what_information_was_impacted",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_information_was_impacted }}",
+              "type": "string"
+            },
+            {
+              "id": "910a4d52-91a9-429d-9ff5-b9dfaf1a3c53",
+              "name": "what_information_was_impacted_array",
+              "value": "={{ $('Notice: parse landing data1').item.json.what_information_was_impacted_array }}",
+              "type": "string"
+            },
+            {
+              "id": "6628a29a-64c3-45fb-b854-2545b239a6c9",
+              "name": "about_company",
+              "value": "={{ $('Notice: parse landing data1').item.json.about_company }}",
+              "type": "string"
+            },
+            {
+              "id": "771e7b8c-37e6-4cb4-8f21-bd6012c34109",
+              "name": "industry",
+              "value": "={{ $('Notice: parse landing data1').item.json.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "576dd980-b519-46c0-a786-018301c25ebe",
+              "name": "since_date",
+              "value": "={{ $('Notice: parse landing data1').item.json.since_date }}",
+              "type": "string"
+            },
+            {
+              "id": "616d4c9d-a3ea-43dc-902e-f9a16bdb399f",
+              "name": "campaign_name",
+              "value": "={{ $('Notice: parse landing data1').item.json.campaign_name }}",
+              "type": "string"
+            },
+            {
+              "id": "eafcd0c7-1af6-4e84-80ad-64f558fd4646",
+              "name": "lead_type",
+              "value": "={{ $('Notice: parse landing data1').item.json.lead_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3008,
+        2848
+      ],
+      "id": "8a9a63ad-105b-40f0-bab6-4e276226a985",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "resource": "mail",
+        "fromEmail": "test@mydatabreachattorney.com",
+        "fromName": "ZLK",
+        "toEmail": "umavchi@zlk.com",
+        "subject": "={{ $('Notice: parse landing data1').item.json.company_name }} - landing page(Testing)",
+        "contentValue": "={{ $('Notice: parse landing data1').item.json.company_name }}\n \nCampaign_name: {{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '') }}\nCampaign_unique_id: {{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_') }}\nLanding page Link: {{ $('Notice: WP create case1').item.json.preview_url }}",
+        "additionalFields": {
+          "attachments": "={{ $('Notice: build attachment fields1').item.json.campaign_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [
+        3824,
+        2688
+      ],
+      "id": "41108e4f-7e9d-457f-85d5-67fad6a35d21",
+      "name": "Send an email",
+      "credentials": {
+        "sendGridApi": {
+          "id": "4ZTSMSVMSLLeM6no",
+          "name": "SendGrid_Staging"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "mail",
+        "fromEmail": "test@mydatabreachattorney.com",
+        "fromName": "ZLK",
+        "toEmail": "umavchi@zlk.com",
+        "subject": "={{ $('Notice: parse landing data1').item.json.company_name }} - landing page(Testing)",
+        "contentValue": "={{ $('Notice: parse landing data1').item.json.company_name }}\n \nCampaign_name: {{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '') }}\nCampaign_unique_id: {{ $('Notice: parse landing data1').item.json.company_name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_') }}\nLanding page Link: {{ $('Notice: WP create case1').item.json.preview_url }}",
+        "additionalFields": {
+          "attachments": "={{ $('Notice: build attachment fields1').item.json.campaign_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        3984
+      ],
+      "id": "7d9d0e20-fe64-4043-a0c0-c9ff854a3761",
+      "name": "Send an email1",
+      "credentials": {
+        "sendGridApi": {
+          "id": "4ZTSMSVMSLLeM6no",
+          "name": "SendGrid_Staging"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook (POST landing-page)1": [
+      {
+        "json": {
+          "headers": {
+            "host": "databreachexperiment.app.n8n.cloud",
+            "user-agent": "python-httpx/0.28.1",
+            "content-length": "74",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "78.47.146.220",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "DE",
+            "cf-ray": "a0314ff62cdc71cd-FRA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "78.47.146.220, 172.68.193.131",
+            "x-forwarded-host": "databreachexperiment.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-76-5cbf5f4d76-4q2vz",
+            "x-is-trusted": "yes",
+            "x-real-ip": "78.47.146.220"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "notice_link": "https://www.claimdepot.com/investigations/mullinax-ford-data-breach-2026",
+            "breach": {
+              "entity_name": "Company Name",
+              "company_name": "Company Name",
+              "campaign_name": "Company Name - Data Breach",
+              "tier": "medium",
+              "approval_level": 2,
+              "status": "draft",
+              "notice_link": "https://example.com/notice.pdf",
+              "impacted": 12345,
+              "site_url": "https://company.example",
+              "company_url": "https://company.example",
+              "what_happened": "...",
+              "what_is_this_about": "...",
+              "public_disclosure_date": "2026-05-29",
+              "what_information_was_impacted_array": [
+                "Name",
+                "SSN"
+              ],
+              "what_information_was_impacted": "Name, SSN"
+            }
+          },
+          "webhookUrl": "https://databreachexperiment.app.n8n.cloud/webhook/landing-page",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get JWT token": {
+      "main": [
+        [
+          {
+            "node": "Route: notice_link present?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: AI extract landing data1": {
+      "main": [
+        [
+          {
+            "node": "Notice: parse landing data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: WP create case1": {
+      "main": [
+        [
+          {
+            "node": "Notice: Sheet mark approved1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: parse landing data1": {
+      "main": [
+        [
+          {
+            "node": "Notice: WP create case1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: Sheet mark approved1": {
+      "main": [
+        [
+          {
+            "node": "Notice: build attachment fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notice: retry sheet (delay)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: fetch raw1": {
+      "main": [
+        [
+          {
+            "node": "Notice: HTML → text1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notice: fetch raw (fallback Jina)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: notice is .html?1": {
+      "main": [
+        [
+          {
+            "node": "Route: Vermont AG?1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notice: fetch via Jina (HTML)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: fetch via Jina1": {
+      "main": [
+        [
+          {
+            "node": "Site: AI extract landing data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: AI extract landing data1": {
+      "main": [
+        [
+          {
+            "node": "Site: parse landing data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: WP create case1": {
+      "main": [
+        [
+          {
+            "node": "Site: Sheet mark approved1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: parse landing data1": {
+      "main": [
+        [
+          {
+            "node": "Site: WP create case1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: Sheet mark approved1": {
+      "main": [
+        [
+          {
+            "node": "Site: build attachment fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Site: retry sheet (delay)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: Vermont AG?1": {
+      "main": [
+        [
+          {
+            "node": "Route: direct fetch?1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notice: fetch Vermont AG page1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: fetch Vermont AG page1": {
+      "main": [
+        [
+          {
+            "node": "Notice: AI find file URL (Vermont)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: AI find file URL (Vermont)1": {
+      "main": [
+        [
+          {
+            "node": "Notice: fetch Vermont file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: fetch Vermont file1": {
+      "main": [
+        [
+          {
+            "node": "Notice: HTML → text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: notice_link present?1": {
+      "main": [
+        [
+          {
+            "node": "Route: notice is .html?1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Site: fetch via Jina1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: retry sheet (delay)1": {
+      "main": [
+        [
+          {
+            "node": "Site: Sheet mark approved1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: retry sheet (delay)1": {
+      "main": [
+        [
+          {
+            "node": "Notice: Sheet mark approved1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: build attachment fields1": {
+      "main": [
+        [
+          {
+            "node": "Site: build TXT attachment1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Site: build TXT attachment1": {
+      "main": [
+        [
+          {
+            "node": "Send an email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: build attachment fields1": {
+      "main": [
+        [
+          {
+            "node": "Notice: build TXT attachment1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: build TXT attachment1": {
+      "main": [
+        [
+          {
+            "node": "Send an email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: direct fetch?1": {
+      "main": [
+        [
+          {
+            "node": "Notice: fetch raw1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notice: fetch via Jina (alt)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: fetch via Jina (alt)1": {
+      "main": [
+        [
+          {
+            "node": "Notice: HTML → text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: fetch via Jina (HTML)1": {
+      "main": [
+        [
+          {
+            "node": "Site: AI extract landing data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: HTML → text1": {
+      "main": [
+        [
+          {
+            "node": "Notice: AI extract landing data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (POST landing-page)1": {
+      "main": [
+        [
+          {
+            "node": "1. Normalize input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Normalize input1": {
+      "main": [
+        [
+          {
+            "node": "Get JWT token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: fetch raw (fallback Jina)": {
+      "main": [
+        [
+          {
+            "node": "Notice: HTML → text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notice: notify by email1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a7b6863b-7cb0-42ac-964c-c519ff83854d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "UoCUYrol1RddyCP8",
+  "tags": []
+}

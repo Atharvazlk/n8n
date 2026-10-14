@@ -1,0 +1,1403 @@
+{
+  "name": "Mass Arbs Competitor Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('Split Out').item.json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1760,
+        384
+      ],
+      "id": "8be0353d-ee2f-4a83-8d0f-813fe8680120",
+      "name": "HTTP Request",
+      "retryOnFail": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name==='Remove Duplicates'  }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2880,
+        960
+      ],
+      "id": "a125890c-dde9-460b-9d7a-8aa6e59ae68d",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are Mass Arb Snapshot Extractor, an advanced AI trained to analyze any provided text or URL and extract structured legal claim information.\nTask\nFrom the provided input {{ $json.data }}, accurately extract the following details and present them in JSON format under a single top-level field named \"Mass Arb Snapshot\".\nAlso, provide a bullet-point section titled Mass Arb Snapshot, where:\nTitles are bold\nValues are in plain text\nAll information is grouped under this section\n📌 Fields to Extract (Inside Mass Arb Snapshot)\nEntity Name – The company involved in the claim. that would be mentioned in the landing page link at the end of it, or sometime before \"/\".\nClaim Basis – The alleged wrongdoing or violation.\nPotential Recovery – How much a claimant might get.\nEligibility – Who qualifies to join the claim.\nDate of Launch –  Extract only the article’s publication/posting/release timestamp and return it in this exact format: Published Time: yyyy-mm-ddThh:mm:ss±hh:mm.or Format as yyyy-mm-dd. sometimes available like this after this\"### month dd,yyyy\" manner in ag.ny.gov articles.  If unavailable, use 'Not Specified'.\n \nCompany Description – Short description of the Entity Name.\nLanding Page Link – The source url.\n \n \n⚖️ Instructions\nOnly extract claim-related information.\nBe concise and factual.\nIf multiple possible values appear, choose the most relevant or widely cited.\nAlways include all fields, even if you must mark them \"Not Specified\".\nDo not include reasoning unless the user explicitly asks for it.\nIf the link cannot be followed or the information is unavailable, explicitly state \"Not specified\" for that field.\nPresent the output in JSON format with a single field \"Claim Snapshot\" containing all subfields.\nAlso provide a bullet-point section titled \"Claim Snapshot\", where:\nTitles are bold\nValues are in plain text\nAll information is grouped under this section.\n \nMass Arb Snapshot\n \nEntity Name:\nClaim Basis:\nPotential Recovery:\nEligibility:\nDate of Launch:\nLanding Page Link:\nCompany Description:",
+              "role": "system"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1312,
+        384
+      ],
+      "id": "9c7c8120-9bb7-4779-a6dc-04d54b246177",
+      "name": "OpenAI",
+      "retryOnFail": false,
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "PMrloyqUlL34SjRi",
+          "name": "OpenAi_Updated"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw",
+          "mode": "list",
+          "cachedResultName": "OPPOSITION SNAPSHOT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "DATE": "={{ $now }}",
+            "Entity Name": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Entity Name'] }}",
+            "Company Description": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Company Description'] }}",
+            "Eligibility": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot'].Eligibility }}",
+            "Potential Recovery": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Potential Recovery'] }}",
+            "Claim Basis": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Claim Basis'] }}",
+            "Landing Page Link": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Landing Page Link'] }}",
+            "Mass arb competitor name": "={{ $json['Mass Arb Competitor Name'] }}",
+            "Date of Launch": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Date of Launch'] }}"
+          },
+          "matchingColumns": [
+            "Entity Name"
+          ],
+          "schema": [
+            {
+              "id": "DATE",
+              "displayName": "DATE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Entity Name",
+              "displayName": "Entity Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Claim Basis",
+              "displayName": "Claim Basis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Potential Recovery",
+              "displayName": "Potential Recovery",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Eligibility",
+              "displayName": "Eligibility",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date of Launch",
+              "displayName": "Date of Launch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Description",
+              "displayName": "Company Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mass arb competitor name",
+              "displayName": "Mass arb competitor name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Landing Page Link",
+              "displayName": "Landing Page Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        160,
+        240
+      ],
+      "id": "fd167923-7622-4d59-b5d7-dd56316aaf88",
+      "name": "Google Sheets1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1536,
+        384
+      ],
+      "id": "9e8e858d-38bd-4ea7-9734-b3afc98281f7",
+      "name": "Wait",
+      "webhookId": "21c59062-0854-45bf-a4cd-5e289358307d"
+    },
+    {
+      "parameters": {
+        "sendTo": "vkori@zlk.com,umavchi@zlk.com",
+        "subject": "Opposition",
+        "message": "=<!DOCTYPE html>\n<html>\n  <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2>🔔 Mass Arb Campaign Launched by {{ $('Google Sheets1').item.json['Mass arb competitor name'] }} for {{ $('Google Sheets1').item.json['Entity Name'] }}:</h2>\n    \n    <p><strong>Entity Name:</strong> {{ $('Google Sheets1').item.json['Entity Name'] }}</p>\n    <p><strong>Claim Basis:</strong> {{ $('Google Sheets1').item.json['Claim Basis'] }}</p>\n    <p><strong>Potential Recovery:</strong> {{ $('Google Sheets1').item.json['Potential Recovery'] }}</p>\n    <p><strong>Eligibility:</strong> {{ $('Google Sheets1').item.json['Eligibility'] }}</p>\n    <p><strong>Date of Launch:</strong> {{ $('Google Sheets1').item.json['Date of Launch'] }}</p>\n    <p><strong>Company Description:</strong> {{ $('Google Sheets1').item.json['Company Description'] }}</p>\n    <p><strong>Landing Page Link:</strong><br>\n      <a href=\"{{ $('Google Sheets1').item.json['Landing Page Link'] }}\" target=\"_blank\">\n        {{ $('Google Sheets1').item.json['Landing Page Link'] }}\n      </a>\n    </p>\n\n    \n  </body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        624
+      ],
+      "id": "79bb2a52-b8be-4bd4-b388-dd4e94c6d0c6",
+      "name": "gmail3",
+      "webhookId": "b65d35a6-bce3-4f19-ab57-6b4e3d660d29",
+      "notesInFlow": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw",
+          "mode": "list",
+          "cachedResultName": "OPPOSITION SNAPSHOT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Entity Name",
+              "lookupValue": "={{ $json.choices[0].message.content['Mass Arb Snapshot']['Entity Name'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -960,
+        320
+      ],
+      "id": "77af1f00-4832-473b-8f61-db22f2ac7faf",
+      "name": "Google Sheets2",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0819223a-73fb-41b9-ab81-c81fd5981897",
+              "leftValue": "={{ $json.count_Entity_Name }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        240
+      ],
+      "id": "dc9c21f3-09ad-4b28-aaab-299b5f4c7aa0",
+      "name": "If1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "Entity Name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        -736,
+        240
+      ],
+      "id": "0db4b41a-7b06-4d64-9457-0c1b772722f3",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": " urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -3328,
+        960
+      ],
+      "id": "0317b8b3-df82-4159-8692-d9ee1b54dc68",
+      "name": "Split Out",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -736,
+        432
+      ],
+      "id": "1f3e632e-54ed-4208-8aa7-cda60ae46a67",
+      "name": "Wait10",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        384,
+        192
+      ],
+      "id": "f2389aac-d855-4735-9900-452662696f6c",
+      "name": "Wait11",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        624
+      ],
+      "id": "9d52ed84-5db8-473c-988e-6b12e3661c2e",
+      "name": "Wait13",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "content": "## extracting the urlrunnng http requet to extract the web page through jena ai",
+        "height": 480,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2608,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "cd9082fe-2cf5-41d0-a1ab-ec9ce6bdad96",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## this extract all url and run over them one by one",
+        "height": 532,
+        "width": 1264
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3648,
+        880
+      ],
+      "id": "ad2c31ca-4970-4be4-ae06-d5a23a75529f",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -960,
+        512
+      ],
+      "id": "73555adf-3dbb-4feb-90a4-9b28c1b411d0",
+      "name": "Wait16",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8ad86ef5-f891-4420-8edf-f65f309350df",
+              "leftValue": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Entity Name'] }}",
+              "rightValue": "Not Specified",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "f9794962-ca4c-43be-bf5e-ee3fc823e3f5",
+              "leftValue": "={{ $('OpenAI').item.json.choices[0].message.content['Mass Arb Snapshot']['Entity Name'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -288,
+        240
+      ],
+      "id": "2232727a-3593-4bda-adc0-7e97da9213a9",
+      "name": "If",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw",
+          "mode": "list",
+          "cachedResultName": "OPPOSITION SNAPSHOT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tw5gYMq7rjgNf69hSSzpzueu74AsMcxG_ztEe0lfBSw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Landing Page Link",
+              "lookupValue": "={{ $('Split Out').item.json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -2432,
+        528
+      ],
+      "id": "bc49b654-f8f5-42eb-97fe-650a88d67e0c",
+      "name": "Google Sheets6",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZB89LRvj49WBtA5j",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "Landing Page Link"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        -2208,
+        384
+      ],
+      "id": "57a3553d-67ef-4c8e-9fbd-8685f874f6f3",
+      "name": "Summarize3"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2208,
+        576
+      ],
+      "id": "0f9116a6-8821-4286-959b-002e7ddb5809",
+      "name": "Wait18",
+      "webhookId": "9b9f028f-1fd0-41a5-a62a-bede4af5610b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0819223a-73fb-41b9-ab81-c81fd5981897",
+              "leftValue": "={{ $json.count_Landing_Page_Link }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1984,
+        384
+      ],
+      "id": "212094f6-3d57-448e-a33f-2cbde5f89263",
+      "name": "If3",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input from previous node\nconst htmlContent = $input.first().json.textAsHtml \n    || $input.first().json.html \n    || $input.first().json.text \n    || \"\";\n\n// ------------------------------------------------------------\n// Extract URLs from <a href=\"...\">\n// ------------------------------------------------------------\nfunction extractUrlsFromHtml(html) {\n    const urls = [];\n    const anchorRegex = /<a[^>]+href=[\"'](https?:\\/\\/[^\"']+)[\"']/gi;\n    let match;\n\n    while ((match = anchorRegex.exec(html)) !== null) {\n        urls.push(match[1]);\n    }\n    return urls;\n}\n\n// ------------------------------------------------------------\n// Extract URLs from plain text\n// ------------------------------------------------------------\nfunction extractUrlsFromText(text) {\n    const urls = [];\n    const urlRegex = /https?:\\/\\/[^\\s\"'<>]+/g;\n    let match;\n\n    while ((match = urlRegex.exec(text)) !== null) {\n        urls.push(match[0]);\n    }\n    return urls;\n}\n\n// ------------------------------------------------------------\n// Decide which extractor to use\n// ------------------------------------------------------------\nlet urls = [];\n\nif (/<a[^>]+href=/i.test(htmlContent)) {\n    // Extract only from anchor tags first\n    urls = extractUrlsFromHtml(htmlContent);\n} else {\n    // Fallback to plain text extraction\n    urls = extractUrlsFromText(htmlContent);\n}\n\n// ------------------------------------------------------------\n// Deduplicate and format output\n// ------------------------------------------------------------\nurls = [...new Set(urls)]  // remove duplicates\n    .map(url => ({ url })); // convert to array of objects\n\n// Console debug\nconsole.log(\"Extracted URLs:\", urls);\n\n// Return in n8n format\nreturn [\n    {\n        json: {\n            \n            urls: urls\n        }\n    }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3776,
+        656
+      ],
+      "id": "60bb68d5-afde-446b-a6f5-499c287d6c8c",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -3104,
+        960
+      ],
+      "id": "1f7ead4a-76c3-44c0-81e6-856749309567",
+      "name": "Remove Duplicates",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "countUnique",
+              "field": "id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        -2656,
+        192
+      ],
+      "id": "489c4cec-2ae4-4e36-bc56-451f5496cdd5",
+      "name": "Summarize1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1b85c147-4800-411f-9277-d8c61c5eb448",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2432,
+        192
+      ],
+      "id": "d845ad37-8c2c-4ed6-a28c-d00379028569",
+      "name": "If2",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sm4PJhtt8qQvHQwE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/sm4PJhtt8qQvHQwE",
+          "cachedResultName": "datasense"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -2208,
+        192
+      ],
+      "id": "f9a8912d-97de-415f-94ec-ba1c3d3c4c88",
+      "name": "Call 'datasense'",
+      "executeOnce": true,
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// --------------------------------------------------\n// Read Landing Page Link from OpenAI node\n// --------------------------------------------------\nconst url =\n $('Loop Over Items').first().json.url||\n  \"\";\n\n// --------------------------------------------------\n// Determine Mass Arb Competitor Name\n// --------------------------------------------------\nfunction getMassArbCompetitorName(link) {\n  const u = String(link).toLowerCase();\n\n  // Special rule: Lantern OR Labaton\n  if (u.includes(\"lantern\") || u.includes(\"labaton\")) {\n    return \"Labaton Keller Sucharow\";\n  }\n\n  if (u.includes(\"classaction.org\")) return \"ClassAction.org\";\n  if (u.includes(\"consumerprotection\")) return \"ConsumerProtection Law\";\n  if (u.includes(\"lowey.com\")) return \"Lowey Dannenberg\";\n  if (u.includes(\"ag.ny.gov\")) return \"NEW YORK AG\";\n  if (u.includes(\"texasattorneygeneral\")) return \"TEXAS AG\";\n  if (u.includes(\"forthepeople.com\")) return \"Morgan & Morgan\";\n  if (u.includes(\"sirillp.com\")) return \"Siri & Glimstad LLP\";\n  if (u.includes(\"crosnerlegal.com\")) return \"Crosner Legal\";\n  if (u.includes(\"clarksonlawfirm.com\")) return \"Clarkson Law Firm\";\n  if (u.includes(\"shamisgentile.com\")) return \"Shamis & Gentile\";\n  if (u.includes(\"bergermontague.com\")) return \"Berger Montague\";\n  if (u.includes(\"zrclaims.com\")) return \"ZR Claims\";\n\n  return \"Not specified\";\n}\n\n// --------------------------------------------------\n// Output\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      \"Landing Page Link\": url,\n      \"Mass Arb Competitor Name\": getMassArbCompetitorName(url),\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        240
+      ],
+      "id": "bc93e207-d24a-4ca0-a83d-afdb893b80a3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5d194507-2c5e-4a6c-ba4b-6d1e8b05e592",
+              "leftValue": "={{ $json.urls }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9961a08f-8886-44f3-89f0-694d92fed65b",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3552,
+        656
+      ],
+      "id": "773d8aca-6ef5-4342-afd9-6dbaf5ee1469",
+      "name": "If4",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dcc88078-b70e-4ee7-8bce-bdf3052b1eb4",
+              "leftValue": "={{ $('Loop Over Items').item.json.url}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2656,
+        528
+      ],
+      "id": "38bf3ba6-2555-487f-b6dc-6af8930ac51a",
+      "name": "If6"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "= from:marketing.landk@gmail.com OR from:vkori@zlk.com OR from:adeshpande@zlk.com subject:(\"Daily Mass Arbitration Links\")"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -4208,
+        416
+      ],
+      "id": "19f7fe00-7743-4d03-9e3e-d10d47e399e2",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NGDSdCBwKFBNgiqE",
+          "name": "Bhagavat Personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "New email arrives with mass-arb links → extract links → process each link one by one → skip duplicates/already-known links → scrape readable page text → use OpenAI to extract claim details → save to sheet → send email alert.",
+        "height": 112,
+        "width": 672
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4224,
+        112
+      ],
+      "typeVersion": 1,
+      "id": "948b484b-0a87-4463-8188-23f122ba1126",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Starts automatically when a matching email arrives in Gmail."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4272,
+        320
+      ],
+      "typeVersion": 1,
+      "id": "f6570434-f9d3-44a0-9afd-31fc8bf71017",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "This node extracts URLs from the email content. It supports both:\nURLs inside <a href=\"...\">\nplain text URLs\nThen it removes duplicates and returns them"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3856,
+        512
+      ],
+      "typeVersion": 1,
+      "id": "c7a880f9-7aa0-4e79-8ffb-1cba502c2b99",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Checks whether the extracted urls array is not empty. If there are no URLs, the workflow stops going down the main extraction path."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3616,
+        512
+      ],
+      "typeVersion": 1,
+      "id": "d6509832-1d67-4cad-bac6-2d04a04e51e7",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "Takes the urls array and splits it into separate items so each URL can be processed one by one.",
+        "height": 80,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3408,
+        1088
+      ],
+      "typeVersion": 1,
+      "id": "bc6348c6-cfbb-4b4e-b852-ea945e3c9486",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "Deduplicates URLs using the url field.",
+        "height": 80,
+        "width": 192,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3152,
+        1088
+      ],
+      "typeVersion": 1,
+      "id": "23d9bd0a-25fd-4e28-8024-a90bec0c5abd",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "Processes URLs one at a time in a loop. This is the main iteration engine for the workflow.",
+        "height": 80,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2944,
+        1088
+      ],
+      "typeVersion": 1,
+      "id": "7241d3c5-afcc-4330-b86b-68399df6fb00",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "Checks that the current loop item has a URL. If not, it goes back to the loop."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2848,
+        448
+      ],
+      "typeVersion": 1,
+      "id": "fb45efc0-b89b-4e51-a0aa-013cd9b891c0",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        608
+      ],
+      "id": "9b82777a-91c6-4ba1-b0a5-ad1b15e07934",
+      "name": "Wait1",
+      "webhookId": "49de5c97-fc6c-4096-8ba8-28fe0d823ff7"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Summarize1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait16",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gmail3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait10": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait11": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait13": {
+      "main": [
+        [
+          {
+            "node": "gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait16": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets6": {
+      "main": [
+        [
+          {
+            "node": "Summarize3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait18",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait18": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize3": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Call 'datasense'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarize1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If6": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "gmail3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "any",
+    "executionTimeout": 1800,
+    "availableInMCP": false,
+    "errorWorkflow": "K4fdqDVnGAU12Z88"
+  },
+  "versionId": "4a5d3735-acb7-42e3-9f2d-24860b259fa2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "761d1cfb5d025d3708c83278c1184ba4185de572a46d88f8f92cbf31eae79603"
+  },
+  "id": "tQZyKZXJw2LXRB5X",
+  "tags": []
+}
